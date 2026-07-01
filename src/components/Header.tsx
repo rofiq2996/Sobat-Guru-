@@ -83,7 +83,7 @@ export function HeaderMobile({ currentView, onChangeView, onToggleTheme, isDark 
     <header className="md:hidden bg-white/90 dark:bg-slate-900/90 backdrop-blur-md px-4 py-3 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between shadow-sm z-30 shrink-0 sticky top-0">
       <div className="flex items-center gap-3 text-slate-800 dark:text-white min-w-0">
         <div className="w-10 h-10 flex items-center justify-center shrink-0">
-          <img src="/logo.png" alt="Logo" className="w-full h-full object-contain" />
+          <img src="/logoo.png" alt="Logo" className="w-full h-full object-contain" />
         </div>
         <div className="flex flex-col min-w-0">
           <h1 className="font-bold text-base leading-tight truncate tracking-tight">

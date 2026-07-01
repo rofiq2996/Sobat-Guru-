@@ -73,7 +73,7 @@ export const LoginView = ({ onLogin, isSyncing }: { onLogin: (user: any) => void
       <div className="relative flex flex-col items-center max-w-md w-full bg-white dark:bg-slate-900 p-6 sm:p-10 rounded-[2rem] shadow-2xl shadow-emerald-900/5 border border-white/50 dark:border-slate-800 animate-in fade-in zoom-in-95 duration-500">
         <div className="mb-4 sm:mb-6 text-center">
           <img 
-            src="/logo.png" 
+            src="/logoo.png" 
             alt="Sobat Guru Logo" 
             className="w-16 h-16 sm:w-20 sm:h-20 object-contain mx-auto drop-shadow-md mb-1 sm:mb-2"
             onError={(e) => { e.currentTarget.style.display = 'none' }}
