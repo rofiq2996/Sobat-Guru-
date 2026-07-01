@@ -1,0 +1,6 @@
+{
+  "name": "Sobat Guru",
+  "description": "Sistem Manajemen Kelas & Siswa Terpadu untuk Guru",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
