@@ -5,7 +5,7 @@ import { ConfirmModal } from './ui/ConfirmModal';
 import { SelectDropdown } from './ui/SelectDropdown';
 import { useAppContext } from '../context/AppContext';
 
-export function BkView() {
+export function CatatanView() {
   const { students } = useAppContext();
   const [records, setRecords] = useState<{id: number, date: string, name: string, issue: string, action: string, status: string}[]>([]);
 
@@ -48,7 +48,7 @@ export function BkView() {
     <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-8 overflow-hidden w-full max-w-full">
       <div className="flex justify-between items-center mb-4">
         <div>
-          <h2 className="text-xl font-bold text-slate-800 dark:text-white">Catatan BK</h2>
+          <h2 className="text-xl font-bold text-slate-800 dark:text-white">Catatan Siswa</h2>
           <p className="text-sm text-slate-500">Rekap kasus dan tindak lanjut siswa</p>
         </div>
         <button 
@@ -134,7 +134,7 @@ export function BkView() {
         <div className="fixed inset-0 bg-slate-900/50 dark:bg-black/60 z-[60] flex items-center justify-center p-4 sm:p-6">
           <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-xl w-full max-w-md flex flex-col max-h-[80vh] sm:max-h-[90vh] overflow-y-auto no-scrollbar animate-in zoom-in-95 duration-200">
             <div className="flex justify-between items-center p-4 sm:p-5 border-b border-slate-100 dark:border-slate-800 shrink-0 sticky top-0 bg-white dark:bg-slate-900 z-20">
-              <h3 className="font-bold text-lg text-slate-800 dark:text-white">{editingId ? 'Edit Catatan BK' : 'Tambah Catatan BK'}</h3>
+              <h3 className="font-bold text-lg text-slate-800 dark:text-white">{editingId ? 'Edit Catatan Siswa' : 'Tambah Catatan Siswa'}</h3>
               <button 
                 onClick={() => setIsModalOpen(false)}
                 className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors bg-slate-100 dark:bg-slate-800 p-1.5 rounded-full"

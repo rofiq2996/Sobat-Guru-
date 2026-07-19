@@ -18,7 +18,7 @@ const viewTitles: Record<string, string> = {
   absensi: 'Absensi Siswa',
   nilai: 'Penilaian Akademik',
   jurnal: 'Jurnal Harian',
-  bk: 'Catatan Bimbingan Konseling',
+  bk: 'Catatan Siswa',
   analisis: 'Analisis Belajar',
   laporan: 'Pusat Laporan',
   kalender: 'Kalender Akademik',

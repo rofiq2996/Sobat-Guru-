@@ -9,7 +9,7 @@ import { getDirectImageUrl } from '../lib/utils';
 import * as XLSX from 'xlsx-js-style';
 
 export function LaporanView() {
-  const { classes, teacher, subjects, semester, kopSurat } = useAppContext();
+  const { classes, teacher, subjects, semester } = useAppContext();
   const [selectedClass, setSelectedClass] = useState(classes[0] || '');
   const [nilaiDownloadType, setNilaiDownloadType] = useState<'PTS' | 'AKHIR'>('PTS');
   
@@ -237,25 +237,6 @@ export function LaporanView() {
       return [emptyRow, dateRow, roleRow, emptyRow, emptyRow, emptyRow, nameRow];
     };
 
-    const getKopSuratRows = (numCols: number) => {
-      const kopRows = [];
-      const createKopRow = (text: string, bold: boolean, size: number) => {
-        const row = new Array(numCols).fill('');
-        row[0] = text; // Merge will center it
-        return { text, bold, size, row };
-      };
-      
-      const kopData = [
-        createKopRow(kopSurat.header1, false, 12),
-        createKopRow(kopSurat.header2, true, 14),
-        createKopRow(kopSurat.namaSekolah, true, 16),
-        createKopRow(kopSurat.alamat, false, 10),
-        createKopRow(kopSurat.websiteEmail, false, 10),
-      ];
-
-      return kopData;
-    };
-
     if (data.isMultiSheet) {
       data.sheets.forEach((sheet: any) => {
         const titleText = `${sheet.title} - ${selectedClass}`;
@@ -345,45 +326,19 @@ export function LaporanView() {
     });
   };
 
-  const drawPdfKopSurat = (doc: jsPDF, pageWidth: number, logoBase64?: string) => {
-    let y = 14;
+  const drawPdfKopSurat = (doc: jsPDF, pageWidth: number) => {
+    let y = 20;
     
-    // Draw logo if base64 is available
-    if (logoBase64) {
-      try {
-        doc.addImage(logoBase64, 'PNG', 14, 12, 22, 22);
-      } catch (err) {
-        console.error("Error adding logo image to PDF:", err);
-      }
-    }
-    
-    doc.setFontSize(12);
-    doc.setFont("helvetica", "normal");
-    doc.text(kopSurat.header1 || '', pageWidth / 2, y, { align: 'center' });
-    
-    y += 5;
-    doc.setFontSize(14);
+    doc.setFontSize(18);
     doc.setFont("helvetica", "bold");
-    doc.text(kopSurat.header2 || '', pageWidth / 2, y, { align: 'center' });
+    doc.text(teacher.school || 'NAMA SEKOLAH', pageWidth / 2, y, { align: 'center' });
     
-    y += 7;
-    doc.setFontSize(16);
-    doc.text(kopSurat.namaSekolah || '', pageWidth / 2, y, { align: 'center' });
-    
+    // Draw line limit (satu tebal, satu tipis)
     y += 6;
-    doc.setFontSize(10);
-    doc.setFont("helvetica", "normal");
-    doc.text(kopSurat.alamat || '', pageWidth / 2, y, { align: 'center' });
-    
-    y += 5;
-    doc.text(kopSurat.websiteEmail || '', pageWidth / 2, y, { align: 'center' });
-    
-    // Draw line limit
-    y += 4;
     doc.setLineWidth(1.0);
     doc.line(14, y, pageWidth - 14, y);
     doc.setLineWidth(0.2);
-    doc.line(14, y + 1.2, pageWidth - 14, y + 1.2);
+    doc.line(14, y + 1.5, pageWidth - 14, y + 1.5);
 
     return y + 10; // return next Y start
   };
@@ -393,12 +348,6 @@ export function LaporanView() {
     const doc = new jsPDF({ orientation: pdfOrientation });
     const pageWidth = doc.internal.pageSize.getWidth();
     const currentDate = new Date().toLocaleDateString('id-ID', { year: 'numeric', month: 'long', day: 'numeric' });
-    
-    let logoBase64 = '';
-    if (kopSurat.logoUrl) {
-      const directUrl = getDirectImageUrl(kopSurat.logoUrl);
-      logoBase64 = await loadImageBase64(directUrl);
-    }
     
     doc.setFont("helvetica");
     doc.setTextColor(0, 0, 0); 
@@ -422,7 +371,7 @@ export function LaporanView() {
       data.sheets.forEach((sheet: any, index: number) => {
         if (index > 0) doc.addPage();
         
-        let startY = drawPdfKopSurat(doc, pageWidth, logoBase64);
+        let startY = drawPdfKopSurat(doc, pageWidth);
         
         doc.setFontSize(14);
         doc.setFont("helvetica", "bold");
@@ -451,7 +400,7 @@ export function LaporanView() {
         addSignature((doc as any).lastAutoTable.finalY);
       });
     } else {
-      let startY = drawPdfKopSurat(doc, pageWidth, logoBase64);
+      let startY = drawPdfKopSurat(doc, pageWidth);
       
       doc.setFontSize(14);
       doc.setFont("helvetica", "bold");
@@ -515,23 +464,8 @@ export function LaporanView() {
             <div className="flex-1 overflow-auto p-2 sm:p-6 bg-slate-100/50 dark:bg-slate-950 custom-scrollbar">
               <div className="bg-white dark:bg-slate-900 shadow-sm border border-slate-200 dark:border-slate-800 sm:rounded-xl p-4 sm:p-10 w-full max-w-4xl mx-auto">
                 {/* Kop Surat Preview */}
-                <div className="flex items-center justify-between pb-4 mb-6 relative">
-                  {kopSurat.logoUrl ? (
-                    <div className="w-20 sm:w-24 flex-shrink-0 flex items-center justify-center">
-                      <img src={getDirectImageUrl(kopSurat.logoUrl)} alt="Logo" className="w-full h-auto max-h-24 object-contain" referrerPolicy="no-referrer" />
-                    </div>
-                  ) : (
-                    <div className="w-20 sm:w-24 hidden sm:block opacity-0"></div>
-                  )}
-                  <div className="text-center flex-1 px-4">
-                    <p className="text-sm font-medium">{kopSurat.header1}</p>
-                    <p className="font-bold text-lg">{kopSurat.header2}</p>
-                    <h1 className="font-black text-2xl uppercase tracking-wide my-1">{kopSurat.namaSekolah}</h1>
-                    <p className="text-sm">{kopSurat.alamat}</p>
-                    <p className="text-sm">{kopSurat.websiteEmail}</p>
-                  </div>
-                  {/* Empty div for right side balance if logo exists */}
-                  <div className={`w-20 sm:w-24 hidden sm:block ${!kopSurat.logoUrl ? 'opacity-0' : ''}`}></div>
+                <div className="flex flex-col items-center justify-center pb-4 mb-6 relative">
+                  <h1 className="font-black text-2xl uppercase tracking-wide my-1 text-center">{teacher.school || 'NAMA SEKOLAH'}</h1>
                   
                   {/* Double line for Kop Surat (Thick + Thin) */}
                   <div className="absolute bottom-0 left-0 right-0">
@@ -664,7 +598,7 @@ export function LaporanView() {
           { title: 'Laporan Nilai Ulangan', desc: 'Rekap nilai semua mata pelajaran' },
           { title: 'Laporan Analisis Belajar Siswa', desc: 'Rekap perkembangan hasil belajar siswa per mata pelajaran' },
           { title: 'Laporan Jurnal Mengajar', desc: 'Rekap jurnal kegiatan belajar mengajar' },
-          { title: 'Laporan Catatan BK', desc: 'Rekap khusus kasus dan tindak lanjut siswa' },
+          { title: 'Laporan Catatan Siswa', desc: 'Rekap khusus kasus dan tindak lanjut siswa' },
         ].map((item, id) => (
           <div key={id} className="bg-white dark:bg-slate-900 p-5 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800 flex flex-col justify-between items-start h-full">
             <div className="flex items-start gap-4 w-full">

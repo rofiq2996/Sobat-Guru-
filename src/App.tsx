@@ -15,7 +15,7 @@ import { ProfilView } from './components/ProfilView';
 import { NilaiView } from './components/NilaiView';
 import { AnalisisView } from './components/AnalisisView';
 import { JurnalView } from './components/JurnalView';
-import { BkView } from './components/BkView';
+import { CatatanView } from './components/CatatanView';
 import { LaporanView } from './components/LaporanView';
 import { ComingSoonView } from './components/ComingSoonView';
 import { BottomNavigation } from './components/BottomNavigation';
@@ -68,7 +68,7 @@ export default function App() {
       case 'jurnal':
         return <JurnalView />;
       case 'bk':
-        return <BkView />;
+        return <CatatanView />;
       case 'laporan':
         return <LaporanView />;
       case 'kalender':

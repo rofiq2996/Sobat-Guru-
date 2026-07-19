@@ -34,7 +34,7 @@ export function MenuView({ onChangeView }: MenuViewProps) {
   navItems.push(
     { id: 'kalender', label: 'Kalender Akademik', icon: Calendar, category: 'Akademik' },
     { id: 'jurnal', label: 'Jurnal Harian', icon: BookOpen, category: 'Administrasi' },
-    { id: 'bk', label: 'Catatan BK', icon: Contact, category: 'Administrasi' },
+    { id: 'bk', label: 'Catatan Siswa', icon: Contact, category: 'Administrasi' },
     { id: 'analisis', label: 'Analisis Siswa', icon: BarChart3, category: 'Administrasi' },
     { id: 'laporan', label: 'Pusat Laporan', icon: Folder, category: 'Administrasi' }
   );

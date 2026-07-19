@@ -46,7 +46,7 @@ export function DashboardView({ onChangeView, onToggleTheme, isDark }: Dashboard
     { label: 'Total Siswa', value: students?.length.toString() || '0', icon: Users, color: 'text-[#0f6c46] dark:text-emerald-500', bg: 'bg-[#0f6c46]/10 dark:bg-emerald-900/20', solidBg: 'bg-[#0f6c46]' },
     { label: 'Total Kelas', value: classes?.length.toString() || '0', icon: Building, color: 'text-blue-500', bg: 'bg-blue-50 dark:bg-blue-900/20', solidBg: 'bg-blue-500' },
     { label: 'Total Mapel', value: subjects?.length.toString() || '0', icon: BookText, color: 'text-orange-500', bg: 'bg-orange-50 dark:bg-orange-900/20', solidBg: 'bg-orange-500' },
-    { label: 'Kasus BK', value: '0', icon: Contact, color: 'text-purple-600 dark:text-purple-500', bg: 'bg-purple-50 dark:bg-purple-900/20', solidBg: 'bg-purple-600' },
+    { label: 'Catatan Siswa', value: '0', icon: Contact, color: 'text-purple-600 dark:text-purple-500', bg: 'bg-purple-50 dark:bg-purple-900/20', solidBg: 'bg-purple-600' },
   ];
 
   return (
@@ -120,7 +120,7 @@ export function DashboardView({ onChangeView, onToggleTheme, isDark }: Dashboard
               <div className="w-12 h-12 bg-purple-600 rounded-2xl flex items-center justify-center shrink-0 shadow-sm">
                 <ShieldCheck className="w-6 h-6 text-white" />
               </div>
-              <span className="text-[11px] font-bold text-slate-700 dark:text-slate-300 text-center leading-tight">BK</span>
+              <span className="text-[11px] font-bold text-slate-700 dark:text-slate-300 text-center leading-tight">Catatan</span>
             </button>
             <button onClick={() => onChangeView('analisis')} className="flex flex-col items-center justify-start gap-2 active:scale-95 transition-transform px-1">
               <div className="w-12 h-12 bg-blue-500 rounded-2xl flex items-center justify-center shrink-0 shadow-sm">
@@ -145,7 +145,7 @@ export function DashboardView({ onChangeView, onToggleTheme, isDark }: Dashboard
             <div className={`absolute -right-4 -top-4 w-20 h-20 ${stat.bg} rounded-full transition-transform group-hover:scale-110 pointer-events-none`} />
             <div className="relative z-10">
               <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-1">{stat.label}</p>
-              <h3 className={`text-3xl font-bold ${['Hadir', 'Izin / Sakit', 'Kasus BK'].includes(stat.label) ? stat.color : 'text-slate-800 dark:text-white'}`}>
+              <h3 className={`text-3xl font-bold ${['Hadir', 'Izin / Sakit', 'Catatan Siswa'].includes(stat.label) ? stat.color : 'text-slate-800 dark:text-white'}`}>
                 {stat.value}
               </h3>
             </div>

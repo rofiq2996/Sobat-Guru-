@@ -8,7 +8,7 @@ const titles: Record<string, string> = {
   nilai: 'Modul Penilaian',
   analisis: 'Analisis Belajar',
   jurnal: 'Jurnal Harian Mengajar',
-  bk: 'Catatan Bimbingan Konseling',
+  bk: 'Catatan Siswa',
   laporan: 'Eksport Pusat Laporan',
 };
 
