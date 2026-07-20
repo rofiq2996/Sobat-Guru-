@@ -123,7 +123,7 @@ export function SiswaView() {
     <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-500 overflow-hidden w-full max-w-full">
       <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800 flex flex-col overflow-hidden w-full max-w-full">
         <div className="p-4 sm:p-5 border-b border-slate-100 dark:border-slate-800 flex flex-col md:flex-row justify-between items-center gap-3">
-          <div className="relative w-full md:w-72 shrink-0">
+          <div className="relative w-full md:w-56 lg:w-72 shrink-0">
             <Search className="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
             <input 
               type="text" 
@@ -133,39 +133,38 @@ export function SiswaView() {
               className="w-full pl-10 pr-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm outline-none transition-shadow focus:border-primary-500 focus:ring-2 focus:ring-primary-200 dark:focus:ring-primary-900" 
             />
           </div>
-          <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto pb-1 sm:pb-0">
+          <div className="flex flex-nowrap justify-start md:justify-end gap-2 w-full md:w-auto overflow-x-auto custom-scrollbar pb-1 sm:pb-0">
             <button 
               onClick={downloadTemplate}
-              className="w-full sm:w-auto bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-900/20 dark:hover:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400 font-medium py-2.5 px-3 rounded-xl shadow-sm transition-colors flex items-center justify-center gap-1.5 text-xs sm:text-sm shrink-0"
+              className="flex-none bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-900/20 dark:hover:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400 font-medium py-2.5 px-3 rounded-xl shadow-sm transition-colors flex items-center justify-center gap-1.5 text-xs sm:text-sm whitespace-nowrap"
               title="Unduh format template excel"
             >
-              <Download className="w-4 h-4" /> Unduh Template
+              <Download className="w-4 h-4" /> <span className="hidden lg:inline">Unduh Template</span>
             </button>
-            <div className="flex gap-2 w-full sm:w-auto">
-              <input 
-                type="file" 
-                accept=".xlsx, .xls" 
-                className="hidden" 
-                ref={fileInputRef}
-                onChange={handleExcelUpload}
-              />
-              <button 
-                onClick={() => fileInputRef.current?.click()}
-                className="flex-1 sm:flex-none bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-medium py-2.5 px-3 rounded-xl shadow-sm transition-colors flex items-center justify-center gap-1.5 text-xs sm:text-sm shrink-0"
-              >
-                <Upload className="w-4 h-4" /> Import Excel
-              </button>
-              <button 
-                onClick={() => {
-                  setNewStudent({ id: '', name: '', class: '', gender: 'L' });
-                  setEditIndex(null);
-                  setIsModalOpen(true);
-                }}
-                className="flex-1 sm:flex-none bg-[#0f6c46] hover:bg-primary-700 text-white font-medium py-2.5 px-3 rounded-xl shadow-sm transition-colors flex items-center justify-center gap-1.5 text-xs sm:text-sm shrink-0"
-              >
-                <Plus className="w-4 h-4" /> Tambah Siswa
-              </button>
-            </div>
+            <input 
+              type="file" 
+              accept=".xlsx, .xls" 
+              className="hidden" 
+              ref={fileInputRef}
+              onChange={handleExcelUpload}
+            />
+            <button 
+              onClick={() => fileInputRef.current?.click()}
+              className="flex-none bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-medium py-2.5 px-3 rounded-xl shadow-sm transition-colors flex items-center justify-center gap-1.5 text-xs sm:text-sm whitespace-nowrap"
+              title="Import Excel"
+            >
+              <Upload className="w-4 h-4" /> <span className="hidden lg:inline">Import Excel</span>
+            </button>
+            <button 
+              onClick={() => {
+                setNewStudent({ id: '', name: '', class: '', gender: 'L' });
+                setEditIndex(null);
+                setIsModalOpen(true);
+              }}
+              className="flex-none bg-[#0f6c46] hover:bg-primary-700 text-white font-medium py-2.5 px-3 rounded-xl shadow-sm transition-colors flex items-center justify-center gap-1.5 text-xs sm:text-sm whitespace-nowrap"
+            >
+              <Plus className="w-4 h-4" /> Tambah Siswa
+            </button>
           </div>
         </div>
         <div className="overflow-x-auto w-full custom-scrollbar">
