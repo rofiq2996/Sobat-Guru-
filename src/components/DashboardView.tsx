@@ -10,7 +10,7 @@ interface DashboardProps {
 }
 
 export function DashboardView({ onChangeView, onToggleTheme, isDark }: DashboardProps) {
-  const { teacher, classes, subjects, students, attendances, user, jurnals, catatan } = useAppContext();
+  const { teacher, classes, subjects, students, attendances, user, jurnals, catatan, grades, agendas } = useAppContext();
 
   const [currentTime, setCurrentTime] = useState(new Date());
 
@@ -21,11 +21,117 @@ export function DashboardView({ onChangeView, onToggleTheme, isDark }: Dashboard
     return () => clearInterval(timer);
   }, []);
 
-  
-  const activities = [
-    ...(jurnals || []).map(j => ({ id: j.id, type: 'jurnal', title: 'Jurnal Ajar', desc: `${j.class} - ${j.mapel}`, time: j.date })),
-    ...(catatan || []).map(c => ({ id: c.id, type: 'catatan', title: 'Catatan Kasus', desc: c.name, time: c.date }))
-  ].sort((a, b) => b.id - a.id).slice(0, 10);
+  // Format dynamic activities for Live Report
+  const getIcon = (type: string) => {
+    switch (type) {
+      case 'jurnal': return <BookText className="w-4 h-4" />;
+      case 'catatan': return <ShieldCheck className="w-4 h-4" />;
+      case 'absensi': return <UserCheck className="w-4 h-4" />;
+      case 'nilai': return <BarChart3 className="w-4 h-4" />;
+      case 'agenda': return <Calendar className="w-4 h-4" />;
+      default: return <Activity className="w-4 h-4" />;
+    }
+  };
+
+  const getIconBg = (type: string) => {
+    switch (type) {
+      case 'jurnal': return 'bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400';
+      case 'catatan': return 'bg-rose-50 text-rose-600 dark:bg-rose-900/30 dark:text-rose-400';
+      case 'absensi': return 'bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400';
+      case 'nilai': return 'bg-amber-50 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400';
+      case 'agenda': return 'bg-indigo-50 text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-400';
+      default: return 'bg-slate-50 text-slate-600 dark:bg-slate-900/30 dark:text-slate-400';
+    }
+  };
+
+  const parsedActivities = [
+    ...(jurnals || []).map(j => ({
+      id: `jurnal-${j.id}`,
+      type: 'jurnal',
+      title: 'Jurnal Ajar',
+      desc: `${j.class} - ${j.mapel}: ${j.topic || ''}`,
+      time: j.date,
+      rawDate: j.date
+    })),
+    ...(catatan || []).map(c => ({
+      id: `catatan-${c.id}`,
+      type: 'catatan',
+      title: `Catatan Kasus: ${c.name}`,
+      desc: `Kasus: ${c.issue} (Tindak lanjut: ${c.action})`,
+      time: c.date,
+      rawDate: c.date
+    })),
+    ...Object.entries(attendances || {}).map(([key, list]) => {
+      if (!list || list.length === 0) return null;
+      const lastUnderscore = key.lastIndexOf('_');
+      const className = lastUnderscore !== -1 ? key.substring(0, lastUnderscore) : 'Kelas';
+      const dateStr = lastUnderscore !== -1 ? key.substring(lastUnderscore + 1) : key;
+      const total = list.length;
+      const hadir = list.filter(s => s.status === 'Hadir').length;
+      const sakit = list.filter(s => s.status === 'Sakit').length;
+      const izin = list.filter(s => s.status === 'Izin').length;
+      const alpa = list.filter(s => s.status === 'Alpa').length;
+      const detail = [];
+      if (hadir > 0) detail.push(`${hadir} Hadir`);
+      if (sakit > 0) detail.push(`${sakit} Sakit`);
+      if (izin > 0) detail.push(`${izin} Izin`);
+      if (alpa > 0) detail.push(`${alpa} Alpa`);
+      const desc = detail.join(', ') || '0 Kehadiran';
+      return {
+        id: `absensi-${key}`,
+        type: 'absensi',
+        title: `Presensi Kelas ${className}`,
+        desc,
+        time: dateStr,
+        rawDate: dateStr
+      };
+    }).filter(Boolean),
+    ...Object.entries(grades || {}).map(([key, list]) => {
+      if (!list || list.length === 0) return null;
+      const parts = key.split('_');
+      const jenisPenilaian = parts[parts.length - 1] || '';
+      const selectedSubjectId = parts[parts.length - 2] || '';
+      const className = parts.slice(0, parts.length - 2).join('_') || 'Kelas';
+      const subjectName = subjects?.find(s => s.id === selectedSubjectId)?.name || selectedSubjectId;
+      let labelPenilaian = jenisPenilaian;
+      if (jenisPenilaian.startsWith('UH_')) labelPenilaian = `Ulangan Harian ${jenisPenilaian.split('_')[1]}`;
+      else if (jenisPenilaian === 'PTS_1') labelPenilaian = 'PTS Ganjil';
+      else if (jenisPenilaian === 'PTS_2') labelPenilaian = 'PTS Genap';
+      else if (jenisPenilaian === 'SAS') labelPenilaian = 'SAS';
+      else if (jenisPenilaian === 'SAT') labelPenilaian = 'SAT';
+      const total = list.length;
+      const filled = list.filter(s => s.nilai !== '').length;
+      // Use fallback date today
+      const todayStr = new Date().toISOString().split('T')[0];
+      return {
+        id: `nilai-${key}`,
+        type: 'nilai',
+        title: `Penilaian: ${subjectName}`,
+        desc: `${className} - ${labelPenilaian} (${filled}/${total} Siswa Terisi)`,
+        time: 'Nilai',
+        rawDate: todayStr
+      };
+    }).filter(Boolean),
+    ...Object.entries(agendas || {}).flatMap(([dateKey, list]) => {
+      return (list || []).map((item, idx) => ({
+        id: `agenda-${dateKey}-${idx}`,
+        type: 'agenda',
+        title: `Agenda: ${item.title}`,
+        desc: `${item.type.toUpperCase()}${item.time ? ` (${item.time})` : ''}`,
+        time: dateKey,
+        rawDate: dateKey
+      }));
+    })
+  ].sort((a, b) => {
+    const dateA = a!.rawDate || '';
+    const dateB = b!.rawDate || '';
+    if (dateA !== dateB) {
+      return dateB.localeCompare(dateA);
+    }
+    return b!.id.localeCompare(a!.id);
+  });
+
+  const activities = parsedActivities.slice(0, 15);
 
   const formattedDate = currentTime.toLocaleDateString('id-ID', {
     day: 'numeric',
@@ -205,19 +311,16 @@ export function DashboardView({ onChangeView, onToggleTheme, isDark }: Dashboard
             {activities.length > 0 ? (
               <div className="space-y-4">
                 {activities.map((act) => (
-                  <div key={`${act.type}-${act.id}`} className="flex items-start gap-3 p-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors border border-transparent hover:border-slate-100 dark:hover:border-slate-800">
-                    <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${
-                      act.type === 'jurnal' ? 'bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400' :
-                      'bg-rose-50 text-rose-600 dark:bg-rose-900/30 dark:text-rose-400'
-                    }`}>
-                      {act.type === 'jurnal' ? <BookText className="w-4 h-4" /> : <ShieldCheck className="w-4 h-4" />}
+                  <div key={`${act!.type}-${act!.id}`} className="flex items-start gap-3 p-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors border border-transparent hover:border-slate-100 dark:hover:border-slate-800">
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${getIconBg(act!.type)}`}>
+                      {getIcon(act!.type)}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold text-slate-800 dark:text-slate-200 truncate">{act.title}</p>
-                      <p className="text-xs text-slate-500 truncate mt-0.5">{act.desc}</p>
+                      <p className="text-sm font-semibold text-slate-800 dark:text-slate-200 truncate">{act!.title}</p>
+                      <p className="text-xs text-slate-500 truncate mt-0.5">{act!.desc}</p>
                     </div>
                     <div className="text-[10px] font-medium text-slate-400 shrink-0 mt-1">
-                      {act.time}
+                      {act!.time}
                     </div>
                   </div>
                 ))}
