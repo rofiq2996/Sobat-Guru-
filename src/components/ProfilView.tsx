@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useAppContext } from '../context/AppContext';
+import { useToast } from '../context/ToastContext';
 import { User, Plus, Trash2, Save, X, BookOpen, GraduationCap, Calendar, Upload, Edit, LogOut, Shield, Download, ShieldAlert, Smartphone, Cloud, Link } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { ConfirmModal } from './ui/ConfirmModal';
@@ -11,6 +12,7 @@ interface ProfilViewProps {
 }
 
 export function ProfilView({ onChangeView }: ProfilViewProps) {
+  const { showToast } = useToast();
   const { teacher, setTeacher, classes, setClasses, subjects, setSubjects, agendas, setAgendas, user, userStatus, handleLogout, semester, setSemester, schoolType, setSchoolType, linkedSessionId, spreadsheetUrl, setSpreadsheetUrl, resetAllData } = useAppContext();
   const calFileInputRef = useRef<HTMLInputElement>(null);
   
@@ -48,7 +50,7 @@ export function ProfilView({ onChangeView }: ProfilViewProps) {
     });
     setSemester(localSemester);
     setSchoolType(localSchoolType);
-    alert('Pengaturan berhasil disimpan!');
+    showToast({ message: 'Pengaturan berhasil disimpan!' });
   };
 
   const handleCalendarExcelUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -116,11 +118,11 @@ export function ProfilView({ onChangeView }: ProfilViewProps) {
             }
           });
 
-          setTimeout(() => alert(`${count} agenda kalender baru berhasil diimpor!`), 100);
+          showToast({ message: `${count} agenda kalender baru berhasil diimpor!` });
           return newAgendas;
         });
       } catch (error) {
-        alert('Gagal mengimpor file excel kalender. Pastikan formatnya benar (Kolom: Tanggal, Nama, Jenis).');
+        showToast({ message: 'Gagal mengimpor file excel kalender. Pastikan formatnya benar.', type: 'error' });
         console.error(error);
       }
       if (calFileInputRef.current) calFileInputRef.current.value = '';
@@ -161,7 +163,7 @@ export function ProfilView({ onChangeView }: ProfilViewProps) {
     e.preventDefault();
     if (!newSubjectName || !newSubjectKkm) return;
     if (newSubjectClasses.length === 0) {
-      alert("Pilih minimal 1 kelas untuk mapel ini");
+      showToast({ message: 'Pilih minimal 1 kelas untuk mapel ini', type: 'error' });
       return;
     }
     
@@ -236,7 +238,7 @@ export function ProfilView({ onChangeView }: ProfilViewProps) {
           setLocalSpreadsheetUrl('');
           await setSpreadsheetUrl(null);
           setShowResetLinkModal(false);
-          alert('Link dan data spreadsheet telah dihapus.');
+          showToast({ message: 'Link dan data spreadsheet telah dihapus.' });
         }}
         onCancel={() => setShowResetLinkModal(false)}
       />
@@ -250,9 +252,9 @@ export function ProfilView({ onChangeView }: ProfilViewProps) {
             await resetAllData();
             setLocalSpreadsheetUrl('');
             setShowResetAllModal(false);
-            alert('Sukses! Seluruh data Anda telah dikosongkan dan direset.');
+            showToast({ message: 'Sukses! Seluruh data Anda telah dikosongkan dan direset.' });
           } catch (e: any) {
-            alert('Gagal melakukan reset data: ' + e.message);
+            showToast({ message: 'Gagal melakukan reset data: ' + e.message, type: 'error' });
           }
         }}
         onCancel={() => setShowResetAllModal(false)}
@@ -340,7 +342,7 @@ export function ProfilView({ onChangeView }: ProfilViewProps) {
                   onClick={async () => {
                     const trimmed = localSpreadsheetUrl.trim();
                     if (trimmed && (!trimmed.startsWith('https://script.google.com/') || !trimmed.includes('/exec'))) {
-                      alert('Error: URL Apps Script tidak valid!\nPastikan Anda menyalin URL Web App yang diakhiri dengan /exec, BUKAN link editor.');
+                      showToast({ message: 'Error: URL Apps Script tidak valid!', type: 'error' });
                       return;
                     }
                     try {
@@ -351,14 +353,14 @@ export function ProfilView({ onChangeView }: ProfilViewProps) {
                           redirect: 'follow'
                         });
                         if (!res.ok) {
-                          alert(`Gagal mengakses Apps Script.\nPastikan pengaturan deploy Web App adalah:\n"Execute as: Me"\n"Who has access: Anyone" (Siapa saja)`);
+                          showToast({ message: 'Gagal mengakses Apps Script.', type: 'error' });
                           return;
                         }
                       }
                       await setSpreadsheetUrl(trimmed);
-                      alert('Link Spreadsheet disinkronkan / disimpan!');
+                      showToast({ message: 'Link Spreadsheet disinkronkan / disimpan!' });
                     } catch (e: any) {
-                      alert(`Error mengakses Apps Script (Gagal tersambung).\n\nKemungkinan penyebab:\n1. Salah link (Harus diakhiri /exec)\n2. Deployment Apps Script belum di-set "Who has access: Anyone"\n\nDetail: ${e.message}`);
+                      showToast({ message: `Error mengakses Apps Script.`, type: 'error' });
                     }
                   }}
                   disabled={localSpreadsheetUrl === spreadsheetUrl}

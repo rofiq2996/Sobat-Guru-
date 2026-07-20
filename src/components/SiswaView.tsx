@@ -2,10 +2,12 @@ import { Search, Plus, Edit, Trash2, X, Upload, Download } from 'lucide-react';
 import React, { useState, useRef } from 'react';
 import * as XLSX from 'xlsx';
 import { useAppContext } from '../context/AppContext';
+import { useToast } from '../context/ToastContext';
 import { SelectDropdown } from './ui/SelectDropdown';
 import { ConfirmModal } from './ui/ConfirmModal';
 
 export function SiswaView() {
+  const { showToast } = useToast();
   const { classes, students, setStudents } = useAppContext();
 
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -86,11 +88,11 @@ export function SiswaView() {
             }
           });
           
-          setTimeout(() => alert(`${addedCount} data siswa baru berhasil diimpor!`), 100);
+          showToast({ message: `${addedCount} data siswa baru berhasil diimpor!` });
           return newStudents;
         });
       } catch (error) {
-        alert('Gagal mengimpor file excel. Pastikan formatnya benar (Kolom: Nama, Kelas, L/P).');
+        showToast({ message: 'Gagal mengimpor file excel. Pastikan formatnya benar.', type: 'error' });
         console.error(error);
       }
       if (fileInputRef.current) fileInputRef.current.value = '';

@@ -395,6 +395,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         console.warn("Drive DB failed, trying Firestore", err);
       }
       
+      if (!data && userSnap && userSnap.exists()) {
+        const userData = userSnap.data();
+        if (userData.appData) {
+           data = userData.appData;
+           console.log("Loaded data from Firestore appData");
+        }
+      }
+      
       if (data) {
         data = sanitizeData(data);
         console.log("Loaded data from Cloud:", data);
