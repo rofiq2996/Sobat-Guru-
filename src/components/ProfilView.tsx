@@ -11,7 +11,7 @@ interface ProfilViewProps {
 }
 
 export function ProfilView({ onChangeView }: ProfilViewProps) {
-  const { teacher, setTeacher, classes, setClasses, subjects, setSubjects, agendas, setAgendas, kopSurat, setKopSurat, user, userStatus, handleLogout, semester, setSemester, schoolType, setSchoolType, linkedSessionId, spreadsheetUrl, setSpreadsheetUrl, resetAllData } = useAppContext();
+  const { teacher, setTeacher, classes, setClasses, subjects, setSubjects, agendas, setAgendas, user, userStatus, handleLogout, semester, setSemester, schoolType, setSchoolType, linkedSessionId, spreadsheetUrl, setSpreadsheetUrl, resetAllData } = useAppContext();
   const calFileInputRef = useRef<HTMLInputElement>(null);
   
   const [localSpreadsheetUrl, setLocalSpreadsheetUrl] = useState(spreadsheetUrl || '');

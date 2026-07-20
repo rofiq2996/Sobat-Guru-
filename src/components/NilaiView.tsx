@@ -240,15 +240,15 @@ export function NilaiView() {
                 <th className="py-3 px-4 font-semibold min-w-[200px]">Nama Siswa</th>
                 {teacher.role === 'Wali Kelas' && (
                   <>
-                    <th className="py-3 px-4 font-semibold w-40 text-center">Sikap</th>
-                    <th className="py-3 px-4 font-semibold w-40 text-center">Karakter</th>
+                    <th className="py-3 px-4 font-semibold min-w-[140px] text-center">Sikap</th>
+                    <th className="py-3 px-4 font-semibold min-w-[140px] text-center">Karakter</th>
                   </>
                 )}
-                <th className="py-3 px-4 font-semibold w-48 text-center md:hidden">
+                <th className="py-3 px-4 font-semibold min-w-[120px] w-32 text-center md:hidden">
                   Nilai {jenisPenilaian && `(${assessmentOptions.find(o => o.value === jenisPenilaian)?.label})`}
                 </th>
                 {desktopCols.map((col, idx) => (
-                  <th key={idx} className="hidden md:table-cell py-3 px-2 font-semibold w-24 text-center">
+                  <th key={idx} className="hidden md:table-cell py-3 px-2 font-semibold min-w-[100px] text-center">
                     {col.type === 'UH' ? `UH ${col.count}` : (col.type.startsWith('PTS') ? (semester === 'Ganjil' ? 'STS 1' : 'STS 2') : (semester === 'Ganjil' ? 'SAS' : 'SAT'))}
                   </th>
                 ))}

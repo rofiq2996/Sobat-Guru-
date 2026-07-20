@@ -3,7 +3,7 @@ import { getAccessToken } from './auth';
 const FILE_NAME = 'Database Sobat Guru';
 
 const REQUIRED_SHEETS = [
-  'Pengaturan', 'Kelas', 'Mapel', 'Agenda', 'Siswa', 'Jadwal', 'Jurnal', 'Kehadiran', 'Nilai'
+  'Pengaturan', 'Kelas', 'Mapel', 'Agenda', 'Siswa', 'Jadwal', 'Jurnal', 'Kehadiran', 'Nilai', 'Catatan'
 ];
 
 export const getDatabaseFileId = async (accessToken: string): Promise<string | null> => {
@@ -119,13 +119,13 @@ export const readDatabase = async (spreadsheetUrl?: string | null): Promise<any 
     const jurnalRows = getSheetData('Jurnal');
     const hadirRows = getSheetData('Kehadiran');
     const nilaiRows = getSheetData('Nilai');
+    const catatanRows = getSheetData('Catatan');
 
     const result: any = {
       teacher: { name: '', role: '', school: '' },
-      kopSurat: { header1: '', header2: '', namaSekolah: '', alamat: '', websiteEmail: '' },
       semester: 'Ganjil',
       schoolType: '5 Hari (Senin - Jumat)',
-      classes: [], subjects: [], agendas: {}, students: [], jadwals: [], jurnals: [], attendances: {}, grades: {}
+      classes: [], subjects: [], agendas: {}, students: [], jadwals: [], jurnals: [], attendances: {}, grades: {}, catatan: []
     };
 
     // Parse Pengaturan
@@ -137,12 +137,6 @@ export const readDatabase = async (spreadsheetUrl?: string | null): Promise<any 
       else if (k === 'teacher_school') result.teacher.school = v;
       else if (k === 'semester') result.semester = v;
       else if (k === 'schoolType') result.schoolType = v;
-      else if (k === 'kop_header1') result.kopSurat.header1 = v;
-      else if (k === 'kop_header2') result.kopSurat.header2 = v;
-      else if (k === 'kop_namaSekolah') result.kopSurat.namaSekolah = v;
-      else if (k === 'kop_alamat') result.kopSurat.alamat = v;
-      else if (k === 'kop_websiteEmail') result.kopSurat.websiteEmail = v;
-      else if (k === 'kop_logoUrl') result.kopSurat.logoUrl = v;
     }
 
     // Parse array data
@@ -197,6 +191,11 @@ export const readDatabase = async (spreadsheetUrl?: string | null): Promise<any 
         });
       });
     }
+    if (catatanRows.length > 1) {
+      result.catatan = catatanRows.slice(1).map((r: any) => ({
+        id: Number(r[0] || 0), date: String(r[1] || ''), name: String(r[2] || ''), issue: String(r[3] || ''), action: String(r[4] || ''), status: String(r[5] || '')
+      })).filter((s: any) => s.id && s.date);
+    }
 
     return result;
   } catch (error) {
@@ -250,13 +249,7 @@ export const saveDatabase = async (data: any, spreadsheetUrl?: string | null): P
       ['teacher_role', data.teacher?.role || ''],
       ['teacher_school', data.teacher?.school || ''],
       ['semester', data.semester || ''],
-      ['schoolType', data.schoolType || ''],
-      ['kop_header1', data.kopSurat?.header1 || ''],
-      ['kop_header2', data.kopSurat?.header2 || ''],
-      ['kop_namaSekolah', data.kopSurat?.namaSekolah || ''],
-      ['kop_alamat', data.kopSurat?.alamat || ''],
-      ['kop_websiteEmail', data.kopSurat?.websiteEmail || ''],
-      ['kop_logoUrl', data.kopSurat?.logoUrl || '']
+      ['schoolType', data.schoolType || '']
     ];
 
     const kelasValues = [
@@ -299,6 +292,11 @@ export const saveDatabase = async (data: any, spreadsheetUrl?: string | null): P
       items.forEach((i: any) => nilaiValues.push([key, i.id, i.name, i.nilai, i.isLocked ? 'TRUE' : 'FALSE', i.sikap || '', i.karakter || '']));
     });
 
+    const catatanValues = [
+      ['ID', 'Tanggal', 'Nama', 'Kasus', 'Tindak Lanjut', 'Status'],
+      ...(data.catatan || []).map((c: any) => [c.id, c.date, c.name, c.issue, c.action, c.status])
+    ];
+
     const reqData = [
       { range: "'Pengaturan'!A1", values: pengValues },
       { range: "'Kelas'!A1", values: kelasValues },
@@ -308,7 +306,8 @@ export const saveDatabase = async (data: any, spreadsheetUrl?: string | null): P
       { range: "'Jadwal'!A1", values: jadwalValues },
       { range: "'Jurnal'!A1", values: jurnalValues },
       { range: "'Kehadiran'!A1", values: hadirValues },
-      { range: "'Nilai'!A1", values: nilaiValues }
+      { range: "'Nilai'!A1", values: nilaiValues },
+      { range: "'Catatan'!A1", values: catatanValues }
     ].filter(d => d.values.length > 0);
 
     const response = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${fileId}/values:batchUpdate`, {

@@ -6,8 +6,7 @@ import { SelectDropdown } from './ui/SelectDropdown';
 import { useAppContext } from '../context/AppContext';
 
 export function CatatanView() {
-  const { students } = useAppContext();
-  const [records, setRecords] = useState<{id: number, date: string, name: string, issue: string, action: string, status: string}[]>([]);
+  const { students, catatan, setCatatan } = useAppContext();
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
@@ -18,15 +17,13 @@ export function CatatanView() {
 
   const studentSuggestions = students.map(s => ({ name: s.name, class: s.class }));
 
-
-
   const handleSave = () => {
     if (!newRecord.date || !newRecord.name) return;
     
     if (editingId) {
-      setRecords(records.map(r => r.id === editingId ? { ...newRecord, id: editingId } : r));
+      setCatatan(catatan.map(r => r.id === editingId ? { ...newRecord, id: editingId } : r));
     } else {
-      setRecords([{ id: Date.now(), ...newRecord }, ...records]);
+      setCatatan([{ id: Date.now(), ...newRecord }, ...catatan]);
     }
     
     setNewRecord({ date: today, name: '', issue: '', action: '', status: 'Proses' });
@@ -77,7 +74,7 @@ export function CatatanView() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800 bg-white dark:bg-slate-900">
-              {records.map((rec) => (
+              {catatan.map((rec) => (
                 <tr key={rec.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
                   <td className="py-3 px-4 text-slate-600 dark:text-slate-400">{rec.date}</td>
                   <td className="py-3 px-4 font-medium text-slate-800 dark:text-slate-200">{rec.name}</td>
@@ -123,7 +120,7 @@ export function CatatanView() {
         message="Apakah Anda yakin ingin menghapus catatan ini?"
         onConfirm={() => {
           if (itemToDelete !== null) {
-            setRecords(records.filter(r => r.id !== itemToDelete));
+            setCatatan(catatan.filter(r => r.id !== itemToDelete));
             setItemToDelete(null);
           }
         }}

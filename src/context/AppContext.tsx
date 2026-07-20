@@ -18,13 +18,13 @@ export interface AgendaData {
   type: string;
 }
 
-export interface KopSuratData {
-  header1: string;
-  header2: string;
-  namaSekolah: string;
-  alamat: string;
-  websiteEmail: string;
-  logoUrl?: string;
+export interface CatatanData {
+  id: number;
+  date: string;
+  name: string;
+  issue: string;
+  action: string;
+  status: string;
 }
 
 export type UserStatus = 'loading' | 'pending' | 'approved' | 'admin' | 'unauthenticated';
@@ -34,8 +34,6 @@ export interface AppContextType {
   setTeacher: (teacher: { name: string; role: string; school: string; }) => void;
   semester: 'Ganjil' | 'Genap';
   setSemester: (semester: 'Ganjil' | 'Genap') => void;
-  kopSurat: KopSuratData;
-  setKopSurat: (kopSurat: KopSuratData) => void;
   classes: string[];
   setClasses: (classes: string[]) => void;
   subjects: SubjectData[];
@@ -52,6 +50,8 @@ export interface AppContextType {
   setAttendances: React.Dispatch<React.SetStateAction<Record<string, { id: number; name: string; status: string; note: string; isLocked: boolean }[]>>>;
   grades: Record<string, { id: number; name: string; nilai: string; isLocked: boolean; sikap: string; karakter: string }[]>;
   setGrades: React.Dispatch<React.SetStateAction<Record<string, { id: number; name: string; nilai: string; isLocked: boolean; sikap: string; karakter: string }[]>>>;
+  catatan: CatatanData[];
+  setCatatan: React.Dispatch<React.SetStateAction<CatatanData[]>>;
   user: User | null;
   userStatus: UserStatus;
   handleLogin: (customUser?: any) => Promise<void>;
@@ -80,19 +80,54 @@ const getInitialAgendas = () => {
   return baseAgendas;
 };
 
+const sanitizeDate = (dateStr: string): string => {
+  if (!dateStr) return '';
+  if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return dateStr;
+  
+  const d = new Date(dateStr);
+  if (!isNaN(d.getTime())) {
+    const parts = dateStr.split(' ');
+    if (parts.length >= 4) {
+      const months: Record<string, string> = { Jan:'01', Feb:'02', Mar:'03', Apr:'04', May:'05', Jun:'06', Jul:'07', Aug:'08', Sep:'09', Oct:'10', Nov:'11', Dec:'12' };
+      const month = months[parts[1]];
+      const day = parts[2].padStart(2, '0');
+      const year = parts[3];
+      if (month && day && year && year.length === 4) {
+         return `${year}-${month}-${day}`;
+      }
+    }
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+  return dateStr;
+};
+
+const sanitizeData = (data: any) => {
+  if (data.jurnals) {
+    data.jurnals = data.jurnals.map((j: any) => ({ ...j, date: sanitizeDate(j.date) }));
+  }
+  if (data.catatan) {
+    data.catatan = data.catatan.map((c: any) => ({ ...c, date: sanitizeDate(c.date) }));
+  }
+  if (data.agendas) {
+    const sanitizedAgendas: any = {};
+    for (const key in data.agendas) {
+       const sanitizedKey = sanitizeDate(key);
+       sanitizedAgendas[sanitizedKey] = data.agendas[key];
+    }
+    data.agendas = sanitizedAgendas;
+  }
+  return data;
+};
+
 const AppContext = createContext<AppContextType | null>(null);
 
 export function AppProvider({ children }: { children: React.ReactNode }) {
   const [teacher, setTeacher] = useState({ name: '', role: '', school: '' });
   const [semester, setSemester] = useState<'Ganjil' | 'Genap'>('Ganjil');
   const [schoolType, setSchoolType] = useState('5 Hari (Senin - Jumat)');
-  const [kopSurat, setKopSurat] = useState<KopSuratData>({
-    header1: '',
-    header2: '',
-    namaSekolah: '',
-    alamat: '',
-    websiteEmail: ''
-  });
   const [classes, setClasses] = useState<string[]>([]);
   const [subjects, setSubjects] = useState<SubjectData[]>([]);
   const [agendas, setAgendas] = useState<Record<string, AgendaData[]>>(getInitialAgendas());
@@ -101,6 +136,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [jurnals, setJurnals] = useState<{ id: number; date: string; class: string; mapel: string; topic: string; notes: string }[]>([]);
   const [attendances, setAttendances] = useState<Record<string, { id: number; name: string; status: string; note: string; isLocked: boolean }[]>>({});
   const [grades, setGrades] = useState<Record<string, { id: number; name: string; nilai: string; isLocked: boolean; sikap: string; karakter: string }[]>>({});
+  const [catatan, setCatatan] = useState<CatatanData[]>([]);
   
   const [user, setUser] = useState<User | null>(null);
   const [userStatus, setUserStatus] = useState<UserStatus>('loading');
@@ -160,11 +196,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           const stringified = JSON.stringify(data.appData);
           if (stringified !== lastReceivedData.current) {
             lastReceivedData.current = stringified;
-            const appD = data.appData;
+            const appD = sanitizeData(data.appData);
             if (appD.teacher) setTeacher(appD.teacher);
             if (appD.semester) setSemester(appD.semester);
             if (appD.schoolType) setSchoolType(appD.schoolType);
-            if (appD.kopSurat) setKopSurat(appD.kopSurat);
             if (appD.classes) setClasses(appD.classes);
             if (appD.subjects) setSubjects(appD.subjects);
             if (appD.agendas) setAgendas(appD.agendas);
@@ -173,6 +208,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
             if (appD.jurnals) setJurnals(appD.jurnals);
             if (appD.attendances) setAttendances(appD.attendances);
             if (appD.grades) setGrades(appD.grades);
+            if (appD.catatan) setCatatan(appD.catatan);
             
             if (!user) {
               setUser({ displayName: appD.teacher?.name || 'Linked Device', photoURL: '', uid: 'linked-device' } as User);
@@ -212,7 +248,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         teacher,
         semester,
         schoolType,
-        kopSurat,
         classes,
         subjects,
         agendas,
@@ -220,7 +255,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         jadwals,
         jurnals,
         attendances,
-        grades
+        grades,
+        catatan
       };
       const stringified = JSON.stringify(currentData);
       
@@ -237,7 +273,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     }, 500);
     
     return () => clearTimeout(timeout);
-  }, [teacher, semester, schoolType, kopSurat, classes, subjects, agendas, students, jadwals, jurnals, attendances, grades, isLoaded, user, userStatus, linkedSessionId]);
+  }, [teacher, semester, schoolType, classes, subjects, agendas, students, jadwals, jurnals, attendances, grades, catatan, isLoaded, user, userStatus, linkedSessionId]);
 
   const syncToDeviceSync = async (dataToSync: any) => {
     if (!linkedSessionId) return;
@@ -360,11 +396,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       }
       
       if (data) {
+        data = sanitizeData(data);
         console.log("Loaded data from Cloud:", data);
         if (data.teacher) setTeacher(data.teacher);
         if (data.semester) setSemester(data.semester);
         if (data.schoolType) setSchoolType(data.schoolType);
-        if (data.kopSurat) setKopSurat(data.kopSurat);
         if (data.classes) setClasses(data.classes);
         if (data.subjects) setSubjects(data.subjects);
         if (data.agendas) setAgendas(data.agendas);
@@ -373,6 +409,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         if (data.jurnals) setJurnals(data.jurnals);
         if (data.attendances) setAttendances(data.attendances);
         if (data.grades) setGrades(data.grades);
+        if (data.catatan) setCatatan(data.catatan);
       }
       setIsLoaded(true);
     } catch (e) {
@@ -517,10 +554,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   };
 
   const loadSyncData = (data: any, code: string) => {
+    data = sanitizeData(data);
     if (data.teacher) setTeacher(data.teacher);
     if (data.semester) setSemester(data.semester);
     if (data.schoolType) setSchoolType(data.schoolType);
-    if (data.kopSurat) setKopSurat(data.kopSurat);
     if (data.classes) setClasses(data.classes);
     if (data.subjects) setSubjects(data.subjects);
     if (data.agendas) setAgendas(data.agendas);
@@ -529,6 +566,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     if (data.jurnals) setJurnals(data.jurnals);
     if (data.attendances) setAttendances(data.attendances);
     if (data.grades) setGrades(data.grades);
+    if (data.catatan) setCatatan(data.catatan);
     
     setLinkedSessionId(code);
     try {
@@ -567,7 +605,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     if (!user || userStatus === 'pending' || user.uid === 'linked-device') return;
     setIsSyncing(true);
     try {
-      const currentData = { teacher, semester, schoolType, kopSurat, classes, subjects, agendas, students, jadwals, jurnals, attendances, grades };
+      const currentData = { teacher, semester, schoolType, classes, subjects, agendas, students, jadwals, jurnals, attendances, grades, catatan };
       const stringified = JSON.stringify(currentData);
       lastReceivedData.current = stringified; // Prevent loopback from realtime listener
       
@@ -598,13 +636,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       setTeacher({ name: user?.displayName || '', role: '', school: '' });
       setSemester('Ganjil');
       setSchoolType('5 Hari (Senin - Jumat)');
-      setKopSurat({
-        header1: '',
-        header2: '',
-        namaSekolah: '',
-        alamat: '',
-        websiteEmail: ''
-      });
       setClasses([]);
       setSubjects([]);
       setAgendas(getInitialAgendas());
@@ -613,6 +644,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       setJurnals([]);
       setAttendances({});
       setGrades({});
+      setCatatan([]);
       setSpreadsheetUrlState(null);
 
       if (user && user.uid !== 'linked-device') {
@@ -626,7 +658,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         teacher: { name: user?.displayName || '', role: '', school: '' },
         semester: 'Ganjil',
         schoolType: '5 Hari (Senin - Jumat)',
-        kopSurat: { header1: '', header2: '', namaSekolah: '', alamat: '', websiteEmail: '' },
         classes: [],
         subjects: [],
         agendas: getInitialAgendas(),
@@ -634,7 +665,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         jadwals: [],
         jurnals: [],
         attendances: {},
-        grades: {}
+        grades: {},
+        catatan: []
       };
 
       try {
@@ -657,7 +689,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       teacher, setTeacher, 
       semester, setSemester, 
       schoolType, setSchoolType, 
-      kopSurat, setKopSurat, 
       classes, setClasses, 
       subjects, setSubjects, 
       agendas, setAgendas, 
@@ -666,6 +697,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       jurnals, setJurnals,
       attendances, setAttendances,
       grades, setGrades,
+      catatan, setCatatan,
       user, userStatus, 
       handleLogin, handleLogout, 
       isSyncing, syncToDrive, 

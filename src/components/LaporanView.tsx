@@ -9,7 +9,7 @@ import { getDirectImageUrl } from '../lib/utils';
 import * as XLSX from 'xlsx-js-style';
 
 export function LaporanView() {
-  const { classes, teacher, subjects, semester } = useAppContext();
+  const { classes, teacher, subjects, semester, students, attendances, grades, jurnals, catatan } = useAppContext();
   const [selectedClass, setSelectedClass] = useState(classes[0] || '');
   const [nilaiDownloadType, setNilaiDownloadType] = useState<'PTS' | 'AKHIR'>('PTS');
   
@@ -42,10 +42,40 @@ export function LaporanView() {
         sheetName = `${new Date(absensiStartDate).toLocaleDateString('id-ID', { month: 'short' })} - ${new Date(absensiEndDate).toLocaleDateString('id-ID', { month: 'short' })}`;
       }
 
+      const classStudents = students.filter(s => s.class.trim().toLowerCase() === selectedClass.trim().toLowerCase());
+      
+      const body = classStudents.map((student, i) => {
+        let hadir = 0;
+        let sakit = 0;
+        let izin = 0;
+        let alpa = 0;
+        
+        Object.keys(attendances).forEach(key => {
+           if (key.startsWith(`${selectedClass}_`)) {
+             const dateStr = key.split('_')[1];
+             if (dateStr) {
+               const dateObj = new Date(dateStr);
+               const startObj = new Date(absensiStartDate);
+               const endObj = new Date(absensiEndDate);
+               if (dateObj >= startObj && dateObj <= endObj) {
+                  const attRec = attendances[key].find(a => a.name === student.name);
+                  if (attRec) {
+                    if (attRec.status === 'Hadir') hadir++;
+                    else if (attRec.status === 'Sakit') sakit++;
+                    else if (attRec.status === 'Izin') izin++;
+                    else if (attRec.status === 'Alpa') alpa++;
+                  }
+               }
+             }
+           }
+        });
+        return [i + 1, student.name, hadir, sakit, izin, alpa];
+      });
+
       return {
         isMultiSheet: false,
         head: ['No', 'Nama Siswa', 'Hadir', 'Sakit', 'Izin', 'Alpa'],
-        body: [],
+        body,
         title: reportTitle,
       };
     } else if (title === 'Laporan Nilai Ulangan') {
@@ -64,12 +94,35 @@ export function LaporanView() {
         isMultiSheet: true,
         sheets: mapels.map(mapel => {
           let head, body;
+          const classStudents = students.filter(s => s.class.trim().toLowerCase() === selectedClass.trim().toLowerCase());
+
           if (downloadType === 'PTS') {
             head = ['No', 'Nama Siswa', 'L/P', ptsName];
-            body = [];
+            const ptsKey = `${selectedClass}_${mapel}_${ptsName}`;
+            body = classStudents.map((s, i) => {
+               const rec = grades[ptsKey]?.find(g => g.name === s.name);
+               return [i + 1, s.name, s.gender, rec && rec.nilai !== '' ? rec.nilai : '-'];
+            });
           } else {
             head = ['No', 'Nama Siswa', 'L/P', 'UH 1', 'UH 2', 'UH 3', ptsName, akhirName, 'Rata-Rata'];
-            body = [];
+            const uh1Key = `${selectedClass}_${mapel}_UH 1`;
+            const uh2Key = `${selectedClass}_${mapel}_UH 2`;
+            const uh3Key = `${selectedClass}_${mapel}_UH 3`;
+            const ptsKey = `${selectedClass}_${mapel}_${ptsName}`;
+            const akhirKey = `${selectedClass}_${mapel}_${akhirName}`;
+            
+            body = classStudents.map((s, i) => {
+               const uh1 = grades[uh1Key]?.find(g => g.name === s.name)?.nilai || '-';
+               const uh2 = grades[uh2Key]?.find(g => g.name === s.name)?.nilai || '-';
+               const uh3 = grades[uh3Key]?.find(g => g.name === s.name)?.nilai || '-';
+               const pts = grades[ptsKey]?.find(g => g.name === s.name)?.nilai || '-';
+               const akhir = grades[akhirKey]?.find(g => g.name === s.name)?.nilai || '-';
+               
+               const vals = [uh1, uh2, uh3, pts, akhir].map(v => Number(v)).filter(v => !isNaN(v) && v !== 0 && String(v) !== '');
+               const avg = vals.length > 0 ? (vals.reduce((a,b)=>a+b,0) / vals.length).toFixed(1) : '-';
+
+               return [i + 1, s.name, s.gender, uh1, uh2, uh3, pts, akhir, avg];
+            });
           }
           return {
             sheetName: mapel.substring(0, 31),
@@ -91,23 +144,52 @@ export function LaporanView() {
       return {
         isMultiSheet: true,
         sheets: mapels.map(mapel => {
+          const classStudents = students.filter(s => s.class.trim().toLowerCase() === selectedClass.trim().toLowerCase());
+          
+          const ptsName = semester === 'Ganjil' ? 'PTS 1' : 'PTS 2';
+          const akhirName = semester === 'Ganjil' ? 'SAS' : 'SAT';
+
+          const body = classStudents.map((s, i) => {
+             const uh1 = grades[`${selectedClass}_${mapel}_UH 1`]?.find(g => g.name === s.name)?.nilai || '-';
+             const uh2 = grades[`${selectedClass}_${mapel}_UH 2`]?.find(g => g.name === s.name)?.nilai || '-';
+             const uh3 = grades[`${selectedClass}_${mapel}_UH 3`]?.find(g => g.name === s.name)?.nilai || '-';
+             const pts = grades[`${selectedClass}_${mapel}_${ptsName}`]?.find(g => g.name === s.name)?.nilai || '-';
+             const akhir = grades[`${selectedClass}_${mapel}_${akhirName}`]?.find(g => g.name === s.name)?.nilai || '-';
+             
+             const uhVals = [uh1, uh2, uh3].map(v => Number(v)).filter(v => !isNaN(v) && String(v) !== '');
+             const uhAvg = uhVals.length > 0 ? (uhVals.reduce((a,b)=>a+b,0) / uhVals.length).toFixed(1) : '-';
+             
+             let ket = '-';
+             if (akhir !== '-' && pts !== '-' && akhir !== '' && pts !== '') {
+                if (Number(akhir) > Number(pts)) ket = 'Meningkat';
+                else if (Number(akhir) < Number(pts)) ket = 'Menurun';
+                else ket = 'Stabil';
+             }
+
+             return [i + 1, s.name, s.gender, uhAvg, pts, akhir, ket];
+          });
+
           return {
             sheetName: mapel.substring(0, 31),
             title: `Analisis Belajar Siswa - ${mapel}`,
             head: ['No', 'Nama Siswa', 'L/P', 'Nilai UH Rata-rata', 'Nilai PTS', 'Nilai Akhir Semester', 'Keterangan Perkembangan'],
-            body: []
+            body
           };
         })
       };
     } else if (title === 'Laporan Jurnal Mengajar') {
+      const classJurnals = jurnals.filter(j => j.class.trim().toLowerCase() === selectedClass.trim().toLowerCase());
       return {
         head: ['No', 'Tanggal', 'Mata Pelajaran', 'Topik/Materi', 'Kegiatan/Catatan'],
-        body: []
+        body: classJurnals.map((j, i) => [i + 1, j.date, j.mapel, j.topic, j.notes])
       };
     } else {
+      const classStudents = students.filter(s => s.class.trim().toLowerCase() === selectedClass.trim().toLowerCase());
+      const classStudentNames = classStudents.map(s => s.name);
+      const classCatatan = catatan.filter(c => classStudentNames.includes(c.name));
       return {
         head: ['No', 'Tanggal', 'Nama Siswa', 'Kasus', 'Tindak Lanjut', 'Status'],
-        body: []
+        body: classCatatan.map((c, i) => [i + 1, c.date, c.name, c.issue, c.action, c.status])
       };
     }
   };

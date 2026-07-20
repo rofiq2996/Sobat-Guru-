@@ -16,6 +16,7 @@ function doPost(e) {
       ensureSheetExists(ss, 'Jurnal');
       ensureSheetExists(ss, 'Kehadiran');
       ensureSheetExists(ss, 'Nilai');
+      ensureSheetExists(ss, 'Catatan');
 
       // 1. Pengaturan
       var pengValues = [
@@ -24,13 +25,7 @@ function doPost(e) {
         ['teacher_role', data.teacher ? data.teacher.role || '' : ''],
         ['teacher_school', data.teacher ? data.teacher.school || '' : ''],
         ['semester', data.semester || ''],
-        ['schoolType', data.schoolType || ''],
-        ['kop_header1', data.kopSurat ? data.kopSurat.header1 || '' : ''],
-        ['kop_header2', data.kopSurat ? data.kopSurat.header2 || '' : ''],
-        ['kop_namaSekolah', data.kopSurat ? data.kopSurat.namaSekolah || '' : ''],
-        ['kop_alamat', data.kopSurat ? data.kopSurat.alamat || '' : ''],
-        ['kop_websiteEmail', data.kopSurat ? data.kopSurat.websiteEmail || '' : ''],
-        ['kop_logoUrl', data.kopSurat ? data.kopSurat.logoUrl || '' : '']
+        ['schoolType', data.schoolType || '']
       ];
       writeToSheet(ss, 'Pengaturan', pengValues);
 
@@ -119,6 +114,15 @@ function doPost(e) {
       }
       writeToSheet(ss, 'Nilai', nilaiValues);
       
+      // 10. Catatan Siswa
+      var catatanValues = [['ID', 'Tanggal', 'Nama', 'Kasus', 'Tindak Lanjut', 'Status']];
+      if (data.catatan) {
+        data.catatan.forEach(function(c) {
+          catatanValues.push([c.id, c.date, c.name, c.issue, c.action, c.status]);
+        });
+      }
+      writeToSheet(ss, 'Catatan', catatanValues);
+      
       return ContentService.createTextOutput(JSON.stringify({ status: 'success' }))
         .setMimeType(ContentService.MimeType.JSON);
     } 
@@ -127,7 +131,6 @@ function doPost(e) {
         teacher: {},
         semester: '',
         schoolType: 'umum',
-        kopSurat: {},
         classes: [],
         subjects: [],
         agendas: {},
@@ -135,13 +138,13 @@ function doPost(e) {
         jadwals: [],
         jurnals: [],
         attendances: {},
-        grades: {}
+        grades: {},
+        catatan: []
       };
 
       try { result.teacher = readPengaturan(ss); } catch(e) {}
       try { result.semester = getPengaturanValue(ss, 'semester') || 'Ganjil 2023/2024'; } catch(e) {}
       try { result.schoolType = getPengaturanValue(ss, 'schoolType') || 'umum'; } catch(e) {}
-      try { result.kopSurat = readKopSurat(ss); } catch(e) {}
       try { result.classes = readKelas(ss); } catch(e) {}
       try { result.subjects = readMapel(ss); } catch(e) {}
       try { result.agendas = readAgenda(ss); } catch(e) {}
@@ -150,6 +153,7 @@ function doPost(e) {
       try { result.jurnals = readJurnal(ss); } catch(e) {}
       try { result.attendances = readKehadiran(ss); } catch(e) {}
       try { result.grades = readNilai(ss); } catch(e) {}
+      try { result.catatan = readCatatan(ss); } catch(e) {}
 
       return ContentService.createTextOutput(JSON.stringify({ status: 'success', data: result }))
         .setMimeType(ContentService.MimeType.JSON);
@@ -199,15 +203,24 @@ function readPengaturan(ss) {
   return teacher;
 }
 
-function readKopSurat(ss) {
-  var kop = { header1: '', header2: '', namaSekolah: '', alamat: '', websiteEmail: '', logoUrl: '' };
-  kop.header1 = getPengaturanValue(ss, 'kop_header1') || '';
-  kop.header2 = getPengaturanValue(ss, 'kop_header2') || '';
-  kop.namaSekolah = getPengaturanValue(ss, 'kop_namaSekolah') || '';
-  kop.alamat = getPengaturanValue(ss, 'kop_alamat') || '';
-  kop.websiteEmail = getPengaturanValue(ss, 'kop_websiteEmail') || '';
-  kop.logoUrl = getPengaturanValue(ss, 'kop_logoUrl') || '';
-  return kop;
+function readCatatan(ss) {
+  var sheet = ss.getSheetByName('Catatan');
+  if (!sheet) return [];
+  var lastRow = sheet.getLastRow();
+  if (lastRow < 2) return [];
+  var values = sheet.getRange(2, 1, lastRow - 1, 6).getValues();
+  var arr = [];
+  for (var i = 0; i < values.length; i++) {
+    if (values[i][0]) arr.push({ 
+      id: Number(values[i][0]), 
+      date: String(values[i][1] || ''), 
+      name: String(values[i][2] || ''), 
+      issue: String(values[i][3] || ''), 
+      action: String(values[i][4] || ''), 
+      status: String(values[i][5] || '') 
+    });
+  }
+  return arr;
 }
 
 function readKelas(ss) {

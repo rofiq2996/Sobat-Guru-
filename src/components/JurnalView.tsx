@@ -62,21 +62,21 @@ export function JurnalView() {
           <table className="w-full text-sm text-left min-w-[800px]">
             <thead className="text-xs text-slate-500 bg-slate-50/50 dark:bg-slate-800/50 uppercase border-b border-slate-100 dark:border-slate-800">
               <tr>
-                <th className="py-3 px-4 font-semibold w-32">Tanggal</th>
-                <th className="py-3 px-4 font-semibold w-24">Kelas</th>
-                <th className="py-3 px-4 font-semibold">Mata Pelajaran</th>
-                <th className="py-3 px-4 font-semibold">Materi / Topik</th>
-                <th className="py-3 px-4 font-semibold">Kegiatan/Catatan</th>
-                <th className="py-3 px-4 font-semibold w-24 text-center">Aksi</th>
+                <th className="py-3 px-4 font-semibold w-32 whitespace-nowrap">Tanggal</th>
+                <th className="py-3 px-4 font-semibold w-24 whitespace-nowrap">Kelas</th>
+                <th className="py-3 px-4 font-semibold whitespace-nowrap">Mata Pelajaran</th>
+                <th className="py-3 px-4 font-semibold whitespace-nowrap">Materi / Topik</th>
+                <th className="py-3 px-4 font-semibold min-w-[200px]">Kegiatan/Catatan</th>
+                <th className="py-3 px-4 font-semibold w-24 text-center whitespace-nowrap">Aksi</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800 bg-white dark:bg-slate-900">
               {jurnals.map((jurnal) => (
                 <tr key={jurnal.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
-                  <td className="py-3 px-4 text-slate-600 dark:text-slate-400">{jurnal.date}</td>
-                  <td className="py-3 px-4 font-medium text-slate-800 dark:text-slate-200">{jurnal.class}</td>
-                  <td className="py-3 px-4 text-slate-800 dark:text-slate-200">{jurnal.mapel}</td>
-                  <td className="py-3 px-4 text-slate-800 dark:text-slate-200">{jurnal.topic}</td>
+                  <td className="py-3 px-4 text-slate-600 dark:text-slate-400 whitespace-nowrap">{jurnal.date}</td>
+                  <td className="py-3 px-4 font-medium text-slate-800 dark:text-slate-200 whitespace-nowrap">{jurnal.class}</td>
+                  <td className="py-3 px-4 text-slate-800 dark:text-slate-200 whitespace-nowrap">{jurnal.mapel}</td>
+                  <td className="py-3 px-4 text-slate-800 dark:text-slate-200 whitespace-nowrap">{jurnal.topic}</td>
                   <td className="py-3 px-4 text-slate-500">{jurnal.notes}</td>
                   <td className="py-3 px-4">
                     <div className="flex items-center justify-center gap-2">
