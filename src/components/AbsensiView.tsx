@@ -5,7 +5,7 @@ import { SelectDropdown } from './ui/SelectDropdown';
 import { isHoliday, getHolidayName } from '../lib/holidays';
 
 export function AbsensiView() {
-  const { classes, students: globalStudents, attendances, setAttendances } = useAppContext();
+  const { classes, students: globalStudents, attendances, setAttendances, touchActivity } = useAppContext();
   const [selectedClass, setSelectedClass] = useState('');
 
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
@@ -37,6 +37,7 @@ export function AbsensiView() {
       ...prev,
       [attendanceKey]: newRecords
     }));
+    touchActivity(`absensi-${attendanceKey}`);
   };
 
   const handleNoteChange = (id: string | number, note: string) => {
@@ -45,6 +46,7 @@ export function AbsensiView() {
       ...prev,
       [attendanceKey]: newRecords
     }));
+    touchActivity(`absensi-${attendanceKey}`);
   };
 
   const handleSaveAll = () => {
@@ -53,6 +55,7 @@ export function AbsensiView() {
       ...prev,
       [attendanceKey]: newRecords
     }));
+    touchActivity(`absensi-${attendanceKey}`);
   };
 
   const handleUnlock = (id: string | number) => {
@@ -61,6 +64,7 @@ export function AbsensiView() {
       ...prev,
       [attendanceKey]: newRecords
     }));
+    touchActivity(`absensi-${attendanceKey}`);
   };
 
   return (

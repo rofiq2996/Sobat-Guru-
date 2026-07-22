@@ -66,6 +66,8 @@ export interface AppContextType {
   spreadsheetUrl: string | null;
   setSpreadsheetUrl: (url: string | null) => Promise<void>;
   resetAllData: () => Promise<void>;
+  activityTimestamps: Record<string, number>;
+  touchActivity: (key: string) => void;
 }
 
 const getInitialAgendas = () => {
@@ -137,6 +139,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [attendances, setAttendances] = useState<Record<string, { id: number; name: string; status: string; note: string; isLocked: boolean }[]>>({});
   const [grades, setGrades] = useState<Record<string, { id: number; name: string; nilai: string; isLocked: boolean; sikap: string; karakter: string }[]>>({});
   const [catatan, setCatatan] = useState<CatatanData[]>([]);
+  const [activityTimestamps, setActivityTimestamps] = useState<Record<string, number>>({});
+
+  const touchActivity = (key: string) => {
+    setActivityTimestamps(prev => ({
+      ...prev,
+      [key]: Date.now()
+    }));
+  };
   
   const [user, setUser] = useState<User | null>(null);
   const [userStatus, setUserStatus] = useState<UserStatus>('loading');
@@ -209,6 +219,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
             if (appD.attendances) setAttendances(appD.attendances);
             if (appD.grades) setGrades(appD.grades);
             if (appD.catatan) setCatatan(appD.catatan);
+            if (appD.activityTimestamps) setActivityTimestamps(appD.activityTimestamps);
             
             if (!user) {
               setUser({ displayName: appD.teacher?.name || 'Linked Device', photoURL: '', uid: 'linked-device' } as User);
@@ -256,7 +267,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         jurnals,
         attendances,
         grades,
-        catatan
+        catatan,
+        activityTimestamps
       };
       const stringified = JSON.stringify(currentData);
       
@@ -273,7 +285,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     }, 500);
     
     return () => clearTimeout(timeout);
-  }, [teacher, semester, schoolType, classes, subjects, agendas, students, jadwals, jurnals, attendances, grades, catatan, isLoaded, user, userStatus, linkedSessionId]);
+  }, [teacher, semester, schoolType, classes, subjects, agendas, students, jadwals, jurnals, attendances, grades, catatan, activityTimestamps, isLoaded, user, userStatus, linkedSessionId]);
 
   const syncToDeviceSync = async (dataToSync: any) => {
     if (!linkedSessionId) return;
@@ -418,6 +430,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         if (data.attendances) setAttendances(data.attendances);
         if (data.grades) setGrades(data.grades);
         if (data.catatan) setCatatan(data.catatan);
+        if (data.activityTimestamps) setActivityTimestamps(data.activityTimestamps);
       }
       setIsLoaded(true);
     } catch (e) {
@@ -706,6 +719,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       attendances, setAttendances,
       grades, setGrades,
       catatan, setCatatan,
+      activityTimestamps, touchActivity,
       user, userStatus, 
       handleLogin, handleLogout, 
       isSyncing, syncToDrive, 

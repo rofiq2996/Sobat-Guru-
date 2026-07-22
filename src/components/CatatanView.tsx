@@ -6,7 +6,7 @@ import { SelectDropdown } from './ui/SelectDropdown';
 import { useAppContext } from '../context/AppContext';
 
 export function CatatanView() {
-  const { students, catatan, setCatatan } = useAppContext();
+  const { students, catatan, setCatatan, touchActivity } = useAppContext();
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
@@ -21,9 +21,12 @@ export function CatatanView() {
     if (!newRecord.date || !newRecord.name) return;
     
     if (editingId) {
-      setCatatan(catatan.map(r => r.id === editingId ? { ...newRecord, id: editingId } : r));
+      setCatatan(catatan.map(r => r.id === editingId ? { ...newRecord, id: editingId, updatedAt: Date.now() } : r));
+      touchActivity(`catatan-${editingId}`);
     } else {
-      setCatatan([{ id: Date.now(), ...newRecord }, ...catatan]);
+      const newId = Date.now();
+      setCatatan([{ id: newId, ...newRecord, updatedAt: newId }, ...catatan]);
+      touchActivity(`catatan-${newId}`);
     }
     
     setNewRecord({ date: today, name: '', issue: '', action: '', status: 'Proses' });

@@ -10,7 +10,7 @@ interface DashboardProps {
 }
 
 export function DashboardView({ onChangeView, onToggleTheme, isDark }: DashboardProps) {
-  const { teacher, classes, subjects, students, attendances, user, jurnals, catatan, grades, agendas, jadwals } = useAppContext();
+  const { teacher, classes, subjects, students, attendances, user, jurnals, catatan, grades, agendas, jadwals, activityTimestamps } = useAppContext();
 
   const [currentTime, setCurrentTime] = useState(new Date());
 
@@ -52,23 +52,55 @@ export function DashboardView({ onChangeView, onToggleTheme, isDark }: Dashboard
     }
   };
 
+  const getTimestamp = (rawDate: string, idVal?: any): number => {
+    if (typeof idVal === 'number' && idVal > 1000000000000) {
+      return idVal;
+    }
+    
+    let baseTime = 0;
+    if (rawDate) {
+      let formattedDate = rawDate.trim();
+      if (/^\d{1,2}[-\/]\d{1,2}[-\/]\d{4}$/.test(formattedDate)) {
+        const parts = formattedDate.split(/[-\/]/);
+        formattedDate = `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
+      }
+      const d = new Date(formattedDate.includes('T') ? formattedDate : `${formattedDate}T00:00:00`);
+      if (!isNaN(d.getTime())) {
+        baseTime = d.getTime();
+      }
+    }
+
+    const offset = (typeof idVal === 'number' && idVal < 1000000000000) ? idVal : 0;
+    return baseTime + offset;
+  };
+
   const parsedActivities = [
-    ...(jurnals || []).map((j: any) => ({
-      id: `jurnal-${j.id}`,
-      type: 'jurnal',
-      title: 'Jurnal Ajar',
-      desc: `${j.class} - ${j.mapel}: ${j.topic || ''}`,
-      time: j.date,
-      rawDate: j.date
-    })),
-    ...(catatan || []).map((c: any) => ({
-      id: `catatan-${c.id}`,
-      type: 'catatan',
-      title: `Catatan Kasus: ${c.name}`,
-      desc: `Kasus: ${c.issue} (Tindak lanjut: ${c.action})`,
-      time: c.date,
-      rawDate: c.date
-    })),
+    ...(jurnals || []).map((j: any) => {
+      const actKey = `jurnal-${j.id}`;
+      const ts = activityTimestamps?.[actKey] || j.updatedAt || (typeof j.id === 'number' && j.id > 1000000000000 ? j.id : getTimestamp(j.date, j.id));
+      return {
+        id: actKey,
+        type: 'jurnal',
+        title: 'Jurnal Ajar',
+        desc: `${j.class} - ${j.mapel}${j.topic ? `: ${j.topic}` : ''}`,
+        time: j.date,
+        rawDate: j.date,
+        timestamp: ts
+      };
+    }),
+    ...(catatan || []).map((c: any) => {
+      const actKey = `catatan-${c.id}`;
+      const ts = activityTimestamps?.[actKey] || c.updatedAt || (typeof c.id === 'number' && c.id > 1000000000000 ? c.id : getTimestamp(c.date, c.id));
+      return {
+        id: actKey,
+        type: 'catatan',
+        title: `Catatan Kasus: ${c.name}`,
+        desc: `Kasus: ${c.issue} (Tindak lanjut: ${c.action})`,
+        time: c.date,
+        rawDate: c.date,
+        timestamp: ts
+      };
+    }),
     ...Object.entries(attendances || {}).map(([key, list]: [string, any]) => {
       if (!list || list.length === 0) return null;
       const lastUnderscore = key.lastIndexOf('_');
@@ -85,13 +117,16 @@ export function DashboardView({ onChangeView, onToggleTheme, isDark }: Dashboard
       if (izin > 0) detail.push(`${izin} Izin`);
       if (alpa > 0) detail.push(`${alpa} Alpa`);
       const desc = detail.join(', ') || '0 Kehadiran';
+      const actKey = `absensi-${key}`;
+      const ts = activityTimestamps?.[actKey] || getTimestamp(dateStr);
       return {
-        id: `absensi-${key}`,
+        id: actKey,
         type: 'absensi',
         title: `Presensi Kelas ${className}`,
         desc,
         time: dateStr,
-        rawDate: dateStr
+        rawDate: dateStr,
+        timestamp: ts
       };
     }).filter(Boolean),
     ...Object.entries(grades || {}).map(([key, list]: [string, any]) => {
@@ -109,34 +144,40 @@ export function DashboardView({ onChangeView, onToggleTheme, isDark }: Dashboard
       else if (jenisPenilaian === 'SAT') labelPenilaian = 'SAT';
       const total = list.length;
       const filled = list.filter((s: any) => s.nilai !== '').length;
-      // Use fallback date today
       const todayStr = new Date().toISOString().split('T')[0];
+      const actKey = `nilai-${key}`;
+      const ts = activityTimestamps?.[actKey] || getTimestamp(todayStr);
       return {
-        id: `nilai-${key}`,
+        id: actKey,
         type: 'nilai',
         title: `Penilaian: ${subjectName}`,
         desc: `${className} - ${labelPenilaian} (${filled}/${total} Siswa Terisi)`,
         time: 'Nilai',
-        rawDate: todayStr
+        rawDate: todayStr,
+        timestamp: ts
       };
     }).filter(Boolean),
     ...Object.entries(agendas || {}).flatMap(([dateKey, list]: [string, any]) => {
-      return (list || []).map((item: any, idx: number) => ({
-        id: `agenda-${dateKey}-${idx}`,
-        type: 'agenda',
-        title: `Agenda: ${item.title}`,
-        desc: `${item.type.toUpperCase()}${item.time ? ` (${item.time})` : ''}`,
-        time: dateKey,
-        rawDate: dateKey
-      }));
+      return (list || []).map((item: any, idx: number) => {
+        const actKey = `agenda-${dateKey}-${idx}`;
+        const ts = activityTimestamps?.[actKey] || activityTimestamps?.[`agenda-${dateKey}`] || getTimestamp(dateKey, idx);
+        return {
+          id: actKey,
+          type: 'agenda',
+          title: `Agenda: ${item.title}`,
+          desc: `${item.type.toUpperCase()}${item.time ? ` (${item.time})` : ''}`,
+          time: dateKey,
+          rawDate: dateKey,
+          timestamp: ts
+        };
+      });
     })
   ].sort((a, b) => {
-    const dateA = a!.rawDate || '';
-    const dateB = b!.rawDate || '';
-    if (dateA !== dateB) {
-      return dateB.localeCompare(dateA);
+    if (!a || !b) return 0;
+    if (b.timestamp !== a.timestamp) {
+      return b.timestamp - a.timestamp;
     }
-    return b!.id.localeCompare(a!.id);
+    return b.id.localeCompare(a.id);
   });
 
   const activities = parsedActivities.slice(0, 15);

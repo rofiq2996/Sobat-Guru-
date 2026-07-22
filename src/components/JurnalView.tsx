@@ -6,7 +6,7 @@ import { useAppContext } from '../context/AppContext';
 import { SelectDropdown } from './ui/SelectDropdown';
 
 export function JurnalView() {
-  const { classes, subjects, jurnals, setJurnals } = useAppContext();
+  const { classes, subjects, jurnals, setJurnals, touchActivity } = useAppContext();
   
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
@@ -18,9 +18,12 @@ export function JurnalView() {
     if (!newJurnal.date || !newJurnal.topic || !newJurnal.class || !newJurnal.mapel) return;
     
     if (editingId) {
-      setJurnals(jurnals.map(j => j.id === editingId ? { ...newJurnal, id: editingId } : j));
+      setJurnals(jurnals.map(j => j.id === editingId ? { ...newJurnal, id: editingId, updatedAt: Date.now() } : j));
+      touchActivity(`jurnal-${editingId}`);
     } else {
-      setJurnals([{ id: Date.now(), ...newJurnal }, ...jurnals]);
+      const newId = Date.now();
+      setJurnals([{ id: newId, ...newJurnal, updatedAt: newId }, ...jurnals]);
+      touchActivity(`jurnal-${newId}`);
     }
     
     setNewJurnal({ date: today, class: '', mapel: '', topic: '', notes: '' });

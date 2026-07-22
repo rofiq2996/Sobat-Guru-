@@ -4,7 +4,7 @@ import { useAppContext } from '../context/AppContext';
 import { SelectDropdown } from './ui/SelectDropdown';
 
 export function NilaiView() {
-  const { classes, subjects, semester, students: globalStudents, grades, setGrades, teacher } = useAppContext();
+  const { classes, subjects, semester, students: globalStudents, grades, setGrades, teacher, touchActivity } = useAppContext();
   const [selectedClass, setSelectedClass] = useState(classes[0] || '');
   const [selectedSubject, setSelectedSubject] = useState('');
   const [jenisPenilaian, setJenisPenilaian] = useState('UH_1');
@@ -90,6 +90,7 @@ export function NilaiView() {
       ...prev,
       [gradeKey]: (prev[gradeKey] || []).map(s => s.nilai !== '' ? { ...s, isLocked: true } : s)
     }));
+    touchActivity(`nilai-${gradeKey}`);
   };
 
   const handleUnlock = (id: number) => {
@@ -97,6 +98,7 @@ export function NilaiView() {
       ...prev,
       [gradeKey]: (prev[gradeKey] || []).map(s => s.id === id ? { ...s, isLocked: false } : s)
     }));
+    touchActivity(`nilai-${gradeKey}`);
   };
 
   const handleNilaiChange = (id: number, val: string) => {
@@ -104,6 +106,7 @@ export function NilaiView() {
       ...prev,
       [gradeKey]: (prev[gradeKey] || []).map(s => s.id === id ? { ...s, nilai: val } : s)
     }));
+    touchActivity(`nilai-${gradeKey}`);
   };
 
   const handleSikapChange = (id: number, val: string) => {
@@ -111,6 +114,7 @@ export function NilaiView() {
       ...prev,
       [gradeKey]: (prev[gradeKey] || []).map(s => s.id === id ? { ...s, sikap: val } : s)
     }));
+    touchActivity(`nilai-${gradeKey}`);
   };
 
   const handleKarakterChange = (id: number, val: string) => {
@@ -118,6 +122,7 @@ export function NilaiView() {
       ...prev,
       [gradeKey]: (prev[gradeKey] || []).map(s => s.id === id ? { ...s, karakter: val } : s)
     }));
+    touchActivity(`nilai-${gradeKey}`);
   };
 
   const getSpecificValue = (studentName: string, type: string, count?: number) => {
@@ -156,6 +161,7 @@ export function NilaiView() {
         [key]: newGrades.map((s, idx) => idx === studentIdx ? { ...s, nilai: val } : s)
       };
     });
+    touchActivity(`nilai-${key}`);
   };
 
   const desktopCols: Array<{ type: string; count?: number }> = [

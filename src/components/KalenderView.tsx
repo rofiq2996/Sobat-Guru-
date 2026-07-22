@@ -4,7 +4,7 @@ import { useAppContext } from '../context/AppContext';
 import { ConfirmModal } from './ui/ConfirmModal';
 
 export function KalenderView() {
-  const { agendas, setAgendas } = useAppContext();
+  const { agendas, setAgendas, touchActivity } = useAppContext();
   const [currentDate, setCurrentDate] = useState(new Date(2026, 5)); // June 2026 as per metadata if we want, or just new Date()
   const [selectedDate, setSelectedDate] = useState<number | null>(null);
   const [isAgendaModalOpen, setIsAgendaModalOpen] = useState(false);
@@ -69,6 +69,7 @@ export function KalenderView() {
         [dateKey]: [...current, { ...newAgenda }]
       };
     });
+    touchActivity(`agenda-${dateKey}`);
 
     setNewAgenda({ title: '', type: 'akademik' });
     setEditAgendaIndex(null);

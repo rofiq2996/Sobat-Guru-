@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { ViewState } from './types';
 import { Sidebar } from './components/Sidebar';
 import { HeaderDesktop, HeaderMobile } from './components/Header';
@@ -30,6 +30,7 @@ export default function App() {
   const [currentView, setCurrentView] = useState<ViewState | 'admin'>('dashboard');
   const [isDark, setIsDark] = useState(false);
   const [showExitConfirm, setShowExitConfirm] = useState(false);
+  const isExitingRef = useRef(false);
   const { user, userStatus, handleLogin, isSyncing, handleLogout } = useAppContext();
 
   useEffect(() => {
@@ -61,6 +62,9 @@ export default function App() {
     }
 
     const handlePopState = (event: PopStateEvent) => {
+      if (isExitingRef.current) {
+        return;
+      }
       const state = event.state;
       if (state && state.view) {
         setCurrentView(state.view);
@@ -69,6 +73,9 @@ export default function App() {
         // They popped back to the 'root' state, meaning they pressed back from the first view
         setShowExitConfirm(true);
         // Push the state back so we don't actually exit
+        window.history.pushState({ view: currentView }, '', `#${currentView}`);
+      } else {
+        setShowExitConfirm(true);
         window.history.pushState({ view: currentView }, '', `#${currentView}`);
       }
     };
@@ -91,12 +98,22 @@ export default function App() {
   };
 
   const confirmExit = () => {
-    // To actually exit, we go back.
-    // Since we pushed a state, going back will trigger popstate, which we need to bypass,
-    // or just use history.go(-2) which might exit if root was index 0.
-    // A simpler approach: replace the current state to allow exit, then go back.
-    window.history.replaceState(null, '', window.location.pathname);
-    window.history.back();
+    isExitingRef.current = true;
+    setShowExitConfirm(false);
+
+    // 1. Cordova / Capacitor / Android native Webview wrapper exit
+    if ((navigator as any).app && typeof (navigator as any).app.exitApp === 'function') {
+      (navigator as any).app.exitApp();
+      return;
+    }
+
+    // 2. Try closing window (works for standalone PWA / popups / webview)
+    try {
+      window.close();
+    } catch (e) {}
+
+    // 3. Fallback history back navigation
+    window.history.go(-2);
   };
 
   const renderView = () => {
