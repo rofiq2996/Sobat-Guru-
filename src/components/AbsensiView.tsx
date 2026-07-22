@@ -111,13 +111,13 @@ export function AbsensiView() {
       ) : (
         <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800 overflow-hidden">
           <div className="overflow-x-auto w-full custom-scrollbar">
-            <table className="w-full text-left text-sm whitespace-nowrap min-w-[600px]">
+            <table className="w-full text-left text-sm whitespace-nowrap min-w-[680px]">
             <thead className="bg-slate-50 dark:bg-slate-800 text-slate-500 font-medium border-b border-slate-200 dark:border-slate-700">
               <tr>
                 <th className="py-3 px-4 w-[40px] text-center">No</th>
                 <th className="py-3 px-4">Nama Siswa</th>
                 <th className="py-3 px-4 text-center">Status Kehadiran</th>
-                <th className="py-3 px-4 min-w-[150px]">Keterangan</th>
+                <th className="py-3 px-4 min-w-[250px]">Keterangan</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800 bg-white dark:bg-slate-900">
@@ -152,7 +152,7 @@ export function AbsensiView() {
                       </button>
                     ))}
                   </td>
-                  <td className="py-3 px-4">
+                  <td className="py-3 px-4 min-w-[250px]">
                     <div className="flex items-center gap-2">
                       <input 
                         type="text" 
@@ -160,7 +160,7 @@ export function AbsensiView() {
                         onChange={(e) => handleNoteChange(student.id, e.target.value)}
                         disabled={student.isLocked}
                         placeholder="Tambahkan keterangan..."
-                        className="w-full flex-1 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-1.5 text-sm outline-none disabled:opacity-80 disabled:bg-slate-100/60 dark:disabled:bg-slate-800/60 disabled:text-slate-600 dark:disabled:text-slate-400"
+                        className="w-full min-w-[210px] flex-1 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-1.5 text-sm outline-none disabled:opacity-80 disabled:bg-slate-100/60 dark:disabled:bg-slate-800/60 disabled:text-slate-600 dark:disabled:text-slate-400"
                       />
                       {student.isLocked ? (
                         <button 
