@@ -10,7 +10,7 @@ interface DashboardProps {
 }
 
 export function DashboardView({ onChangeView, onToggleTheme, isDark }: DashboardProps) {
-  const { teacher, classes, subjects, students, attendances, user, jurnals, catatan, grades, agendas } = useAppContext();
+  const { teacher, classes, subjects, students, attendances, user, jurnals, catatan, grades, agendas, jadwals } = useAppContext();
 
   const [currentTime, setCurrentTime] = useState(new Date());
 
@@ -20,6 +20,14 @@ export function DashboardView({ onChangeView, onToggleTheme, isDark }: Dashboard
     }, 1000);
     return () => clearInterval(timer);
   }, []);
+
+  const days = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+  const currentDay = days[currentTime.getDay()];
+  
+  const todayJadwals = (jadwals || [])
+    .filter(j => j.hari === currentDay)
+    .sort((a, b) => a.waktu.localeCompare(b.waktu));
+
 
   // Format dynamic activities for Live Report
   const getIcon = (type: string) => {
@@ -45,7 +53,7 @@ export function DashboardView({ onChangeView, onToggleTheme, isDark }: Dashboard
   };
 
   const parsedActivities = [
-    ...(jurnals || []).map(j => ({
+    ...(jurnals || []).map((j: any) => ({
       id: `jurnal-${j.id}`,
       type: 'jurnal',
       title: 'Jurnal Ajar',
@@ -53,7 +61,7 @@ export function DashboardView({ onChangeView, onToggleTheme, isDark }: Dashboard
       time: j.date,
       rawDate: j.date
     })),
-    ...(catatan || []).map(c => ({
+    ...(catatan || []).map((c: any) => ({
       id: `catatan-${c.id}`,
       type: 'catatan',
       title: `Catatan Kasus: ${c.name}`,
@@ -61,16 +69,16 @@ export function DashboardView({ onChangeView, onToggleTheme, isDark }: Dashboard
       time: c.date,
       rawDate: c.date
     })),
-    ...Object.entries(attendances || {}).map(([key, list]) => {
+    ...Object.entries(attendances || {}).map(([key, list]: [string, any]) => {
       if (!list || list.length === 0) return null;
       const lastUnderscore = key.lastIndexOf('_');
       const className = lastUnderscore !== -1 ? key.substring(0, lastUnderscore) : 'Kelas';
       const dateStr = lastUnderscore !== -1 ? key.substring(lastUnderscore + 1) : key;
       const total = list.length;
-      const hadir = list.filter(s => s.status === 'Hadir').length;
-      const sakit = list.filter(s => s.status === 'Sakit').length;
-      const izin = list.filter(s => s.status === 'Izin').length;
-      const alpa = list.filter(s => s.status === 'Alpa').length;
+      const hadir = list.filter((s: any) => s.status === 'Hadir').length;
+      const sakit = list.filter((s: any) => s.status === 'Sakit').length;
+      const izin = list.filter((s: any) => s.status === 'Izin').length;
+      const alpa = list.filter((s: any) => s.status === 'Alpa').length;
       const detail = [];
       if (hadir > 0) detail.push(`${hadir} Hadir`);
       if (sakit > 0) detail.push(`${sakit} Sakit`);
@@ -86,13 +94,13 @@ export function DashboardView({ onChangeView, onToggleTheme, isDark }: Dashboard
         rawDate: dateStr
       };
     }).filter(Boolean),
-    ...Object.entries(grades || {}).map(([key, list]) => {
+    ...Object.entries(grades || {}).map(([key, list]: [string, any]) => {
       if (!list || list.length === 0) return null;
       const parts = key.split('_');
       const jenisPenilaian = parts[parts.length - 1] || '';
       const selectedSubjectId = parts[parts.length - 2] || '';
       const className = parts.slice(0, parts.length - 2).join('_') || 'Kelas';
-      const subjectName = subjects?.find(s => s.id === selectedSubjectId)?.name || selectedSubjectId;
+      const subjectName = subjects?.find((s: any) => s.id === selectedSubjectId)?.name || selectedSubjectId;
       let labelPenilaian = jenisPenilaian;
       if (jenisPenilaian.startsWith('UH_')) labelPenilaian = `Ulangan Harian ${jenisPenilaian.split('_')[1]}`;
       else if (jenisPenilaian === 'PTS_1') labelPenilaian = 'PTS Ganjil';
@@ -100,7 +108,7 @@ export function DashboardView({ onChangeView, onToggleTheme, isDark }: Dashboard
       else if (jenisPenilaian === 'SAS') labelPenilaian = 'SAS';
       else if (jenisPenilaian === 'SAT') labelPenilaian = 'SAT';
       const total = list.length;
-      const filled = list.filter(s => s.nilai !== '').length;
+      const filled = list.filter((s: any) => s.nilai !== '').length;
       // Use fallback date today
       const todayStr = new Date().toISOString().split('T')[0];
       return {
@@ -112,8 +120,8 @@ export function DashboardView({ onChangeView, onToggleTheme, isDark }: Dashboard
         rawDate: todayStr
       };
     }).filter(Boolean),
-    ...Object.entries(agendas || {}).flatMap(([dateKey, list]) => {
-      return (list || []).map((item, idx) => ({
+    ...Object.entries(agendas || {}).flatMap(([dateKey, list]: [string, any]) => {
+      return (list || []).map((item: any, idx: number) => ({
         id: `agenda-${dateKey}-${idx}`,
         type: 'agenda',
         title: `Agenda: ${item.title}`,
@@ -275,18 +283,92 @@ export function DashboardView({ onChangeView, onToggleTheme, isDark }: Dashboard
             </button>
           </div>
           <div className="overflow-x-auto custom-scrollbar bg-slate-50/50 dark:bg-slate-800/30 rounded-xl border border-slate-100 dark:border-slate-800 md:block hidden">
-            <div className="flex flex-col items-center justify-center p-10 text-slate-400 dark:text-slate-500">
-              <CalendarDays className="w-10 h-10 mb-3 opacity-50" />
-              <p className="text-sm font-medium">Belum ada jadwal hari ini</p>
-            </div>
+            {todayJadwals.length > 0 ? (
+              <table className="w-full text-sm text-left">
+                <thead className="text-xs text-slate-500 dark:text-slate-400 uppercase bg-slate-100/50 dark:bg-slate-800/50 border-b border-slate-100 dark:border-slate-800">
+                  <tr>
+                    <th className="px-4 py-3 font-semibold rounded-tl-xl">Waktu</th>
+                    <th className="px-4 py-3 font-semibold">Kelas</th>
+                    <th className="px-4 py-3 font-semibold">Mata Pelajaran</th>
+                    <th className="px-4 py-3 font-semibold text-right rounded-tr-xl">Aksi</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {todayJadwals.map((j, idx) => (
+                    <tr key={j.id} className={`${idx !== todayJadwals.length - 1 ? 'border-b border-slate-100 dark:border-slate-800' : ''} hover:bg-white dark:hover:bg-slate-800 transition-colors`}>
+                      <td className="px-4 py-3 font-medium text-slate-700 dark:text-slate-300 whitespace-nowrap">{j.waktu}</td>
+                      <td className="px-4 py-3 text-slate-600 dark:text-slate-400">
+                        <span className="inline-flex items-center px-2 py-1 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-medium text-xs">
+                          {j.kelas}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-slate-600 dark:text-slate-400 font-medium">{j.mapel}</td>
+                      <td className="px-4 py-3 text-right">
+                        <div className="flex items-center justify-end gap-2">
+                          <button 
+                            onClick={() => onChangeView('absensi')}
+                            className="w-7 h-7 rounded-lg bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 font-bold text-xs flex items-center justify-center border border-emerald-100 dark:border-emerald-800/50 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 transition-colors shadow-sm"
+                            title="Isi Absensi"
+                          >A</button>
+                          <button 
+                            onClick={() => onChangeView('jurnal')}
+                            className="w-7 h-7 rounded-lg bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 font-bold text-xs flex items-center justify-center border border-indigo-100 dark:border-indigo-800/50 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 transition-colors shadow-sm"
+                            title="Isi Jurnal"
+                          >J</button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            ) : (
+              <div className="flex flex-col items-center justify-center p-10 text-slate-400 dark:text-slate-500">
+                <CalendarDays className="w-10 h-10 mb-3 opacity-50" />
+                <p className="text-sm font-medium">Belum ada jadwal hari ini</p>
+              </div>
+            )}
           </div>
 
           {/* Mobile List View */}
           <div className="md:hidden flex flex-col divide-y divide-slate-100 dark:divide-slate-800">
-            <div className="flex flex-col items-center justify-center p-10 text-slate-400 dark:text-slate-500 bg-slate-50/50 dark:bg-slate-800/30 rounded-xl border border-slate-100 dark:border-slate-800">
-              <CalendarDays className="w-8 h-8 mb-2 opacity-50" />
-              <p className="text-xs font-medium">Belum ada jadwal hari ini</p>
-            </div>
+            {todayJadwals.length > 0 ? (
+              todayJadwals.map((j) => (
+                <div key={j.id} className="py-3 first:pt-0 last:pb-0 flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-xl bg-blue-50 dark:bg-blue-900/30 flex flex-col items-center justify-center shrink-0 border border-blue-100 dark:border-blue-800/50">
+                    <span className="text-[9px] font-bold text-blue-600 dark:text-blue-400 leading-none mb-1 text-center px-1">MULAI</span>
+                    <span className="text-xs font-bold text-blue-700 dark:text-blue-300 leading-none">{j.waktu.split(' - ')[0]}</span>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h4 className="text-sm font-bold text-slate-800 dark:text-slate-200 truncate">{j.mapel}</h4>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 flex items-center gap-1.5 flex-wrap">
+                      <span className="bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded text-[10px] font-semibold text-slate-600 dark:text-slate-300">Kelas {j.kelas}</span>
+                      <span className="text-[10px] whitespace-nowrap">s/d {j.waktu.split(' - ')[1]}</span>
+                    </p>
+                  </div>
+                  <div className="flex gap-2 shrink-0">
+                    <button 
+                      onClick={() => onChangeView('absensi')}
+                      className="w-9 h-9 rounded-xl bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 font-bold text-sm flex items-center justify-center border border-emerald-100 dark:border-emerald-800/50 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 active:scale-95 transition-all shadow-sm"
+                      title="Isi Absensi"
+                    >
+                      A
+                    </button>
+                    <button 
+                      onClick={() => onChangeView('jurnal')}
+                      className="w-9 h-9 rounded-xl bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 font-bold text-sm flex items-center justify-center border border-indigo-100 dark:border-indigo-800/50 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 active:scale-95 transition-all shadow-sm"
+                      title="Isi Jurnal"
+                    >
+                      J
+                    </button>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className="flex flex-col items-center justify-center p-10 text-slate-400 dark:text-slate-500 bg-slate-50/50 dark:bg-slate-800/30 rounded-xl border border-slate-100 dark:border-slate-800">
+                <CalendarDays className="w-8 h-8 mb-2 opacity-50" />
+                <p className="text-xs font-medium">Belum ada jadwal hari ini</p>
+              </div>
+            )}
           </div>
         </div>
 

@@ -29,6 +29,7 @@ import { BookOpen } from 'lucide-react';
 export default function App() {
   const [currentView, setCurrentView] = useState<ViewState | 'admin'>('dashboard');
   const [isDark, setIsDark] = useState(false);
+  const [showExitConfirm, setShowExitConfirm] = useState(false);
   const { user, userStatus, handleLogin, isSyncing, handleLogout } = useAppContext();
 
   useEffect(() => {
@@ -44,15 +45,64 @@ export default function App() {
     }
   }, []);
 
+  // Back button and history management for PWA
+  useEffect(() => {
+    // Add a dummy entry to the history stack if this is the first load
+    // This allows us to catch the back button press that would otherwise exit the app
+    if (window.history.length === 1 || !window.history.state) {
+      window.history.replaceState({ type: 'root' }, '', window.location.pathname);
+      window.history.pushState({ view: currentView }, '', `#${currentView}`);
+    } else if (window.history.state && window.history.state.view) {
+        // Sync state if reloaded on a hash
+        const hash = window.location.hash.replace('#', '');
+        if (hash && hash !== currentView) {
+            setCurrentView(hash as ViewState | 'admin');
+        }
+    }
+
+    const handlePopState = (event: PopStateEvent) => {
+      const state = event.state;
+      if (state && state.view) {
+        setCurrentView(state.view);
+        setShowExitConfirm(false);
+      } else if (state && state.type === 'root') {
+        // They popped back to the 'root' state, meaning they pressed back from the first view
+        setShowExitConfirm(true);
+        // Push the state back so we don't actually exit
+        window.history.pushState({ view: currentView }, '', `#${currentView}`);
+      }
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, [currentView]); // We need currentView here to push the correct state when preventing exit
+
+  const handleViewChange = (newView: ViewState | 'admin') => {
+    if (newView !== currentView) {
+      window.history.pushState({ view: newView }, '', `#${newView}`);
+      setCurrentView(newView);
+      setShowExitConfirm(false);
+    }
+  };
+
   const toggleTheme = () => {
     setIsDark(!isDark);
     document.documentElement.classList.toggle('dark');
   };
 
+  const confirmExit = () => {
+    // To actually exit, we go back.
+    // Since we pushed a state, going back will trigger popstate, which we need to bypass,
+    // or just use history.go(-2) which might exit if root was index 0.
+    // A simpler approach: replace the current state to allow exit, then go back.
+    window.history.replaceState(null, '', window.location.pathname);
+    window.history.back();
+  };
+
   const renderView = () => {
     switch (currentView) {
       case 'dashboard':
-        return <DashboardView onChangeView={setCurrentView as any} onToggleTheme={toggleTheme} isDark={isDark} />;
+        return <DashboardView onChangeView={handleViewChange as any} onToggleTheme={toggleTheme} isDark={isDark} />;
       case 'siswa':
         return <SiswaView />;
       case 'jadwal':
@@ -60,7 +110,7 @@ export default function App() {
       case 'absensi':
         return <AbsensiView />;
       case 'profil':
-        return <ProfilView onChangeView={setCurrentView as any} />;
+        return <ProfilView onChangeView={handleViewChange as any} />;
       case 'nilai':
         return <NilaiView />;
       case 'analisis':
@@ -74,11 +124,11 @@ export default function App() {
       case 'kalender':
         return <KalenderView />;
       case 'menu':
-        return <MenuView onChangeView={setCurrentView as any} />;
+        return <MenuView onChangeView={handleViewChange as any} />;
       case 'admin':
         return <AdminView />;
       default:
-        return <DashboardView onChangeView={setCurrentView as any} onToggleTheme={toggleTheme} isDark={isDark} />;
+        return <DashboardView onChangeView={handleViewChange as any} onToggleTheme={toggleTheme} isDark={isDark} />;
     }
   };
 
@@ -120,20 +170,20 @@ export default function App() {
     <div className="flex h-screen w-full bg-slate-50 dark:bg-slate-950 overflow-hidden text-slate-800 dark:text-slate-200">
       <Sidebar 
         currentView={currentView} 
-        onChangeView={setCurrentView} 
+        onChangeView={handleViewChange} 
         onToggleTheme={toggleTheme}
         isDark={isDark}
       />
       <main className="flex-1 flex flex-col h-full relative overflow-hidden min-w-0 bg-slate-50/50 dark:bg-slate-950">
         <HeaderMobile 
           currentView={currentView as any} 
-          onChangeView={setCurrentView as any}
+          onChangeView={handleViewChange as any}
           onToggleTheme={toggleTheme}
           isDark={isDark}
         />
         <HeaderDesktop 
           currentView={currentView as any} 
-          onChangeView={setCurrentView as any}
+          onChangeView={handleViewChange as any}
           onToggleTheme={toggleTheme}
           isDark={isDark}
         />
@@ -142,8 +192,34 @@ export default function App() {
             {renderView()}
           </div>
         </div>
-        <BottomNavigation currentView={currentView as any} onChangeView={setCurrentView as any} />
+        <BottomNavigation currentView={currentView as any} onChangeView={handleViewChange as any} />
       </main>
+
+      {/* Exit Confirmation Dialog */}
+      {showExitConfirm && (
+        <div className="fixed inset-0 bg-slate-900/50 dark:bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 w-full max-w-sm shadow-xl border border-slate-100 dark:border-slate-800 animate-in fade-in zoom-in duration-200">
+            <h3 className="text-xl font-bold text-slate-800 dark:text-white mb-2">Keluar Aplikasi?</h3>
+            <p className="text-sm text-slate-500 dark:text-slate-400 mb-6">
+              Apakah Anda yakin ingin keluar dari aplikasi Sobat Guru?
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowExitConfirm(false)}
+                className="flex-1 px-4 py-2.5 rounded-xl text-sm font-semibold text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
+              >
+                Batal
+              </button>
+              <button
+                onClick={confirmExit}
+                className="flex-1 px-4 py-2.5 rounded-xl text-sm font-semibold text-white bg-rose-500 hover:bg-rose-600 transition-colors"
+              >
+                Ya, Keluar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
